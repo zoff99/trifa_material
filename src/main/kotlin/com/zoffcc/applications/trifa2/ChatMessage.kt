@@ -370,10 +370,15 @@ fun outgoing_filetransfer(message: UIMessage, ui_scale: Float)
             // filetransfer finished (either because of CANCEL or OK) ------------
         } else // TOX_FILE_CONTROL_RESUME
         {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                progress = (message.currentfilepos.toFloat() / message.filesize.toFloat())
-            )
+            Row(modifier = Modifier.fillMaxWidth())
+            {
+                LinearProgressIndicator(
+                    modifier = Modifier.weight(10.0f),
+                    progress = (message.currentfilepos.toFloat() / message.filesize.toFloat())
+                )
+                Text(modifier = Modifier.width(70.dp),
+                    text = "" + ((message.currentfilepos.toFloat() / message.filesize.toFloat()) * 100.0f).toLong() + "%")
+            }
             Column(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.size(10.dp).align(Alignment.Start))
                 IconButton(
@@ -397,10 +402,16 @@ fun incoming_filetransfer(message: UIMessage, ui_scale: Float)
 {
     if (is_filetransfer_in_progress(message))
     {
-        LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth(),
-            progress = (message.currentfilepos.toFloat() / message.filesize.toFloat())
-        )
+        Row(modifier = Modifier.fillMaxWidth())
+        {
+            LinearProgressIndicator(
+                modifier = Modifier.weight(10.0f),
+                progress = (message.currentfilepos.toFloat() / message.filesize.toFloat())
+            )
+            Text(modifier = Modifier.width(70.dp),
+                text = "" + ((message.currentfilepos.toFloat() / message.filesize.toFloat()) * 100.0f).toLong() + "%")
+        }
+
         Column(modifier = Modifier.fillMaxWidth()) {
             Spacer(Modifier.size(10.dp).align(Alignment.Start))
             IconButton(
