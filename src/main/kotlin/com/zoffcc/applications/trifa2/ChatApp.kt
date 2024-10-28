@@ -329,62 +329,63 @@ fun ChatApp(focusRequester: FocusRequester, displayTextField: Boolean = true, se
                 Image(painterResource("background.jpg"), modifier = Modifier.fillMaxSize(), contentDescription = null, contentScale = ContentScale.Crop)
                 Column(modifier = Modifier.fillMaxSize()) {
                     var isDragging by remember { mutableStateOf(false) }
-
-                    val dragAndDropTarget = remember {
+                    val dragAndDropTarget = remember(selectedContactPubkey) {
                         object: DragAndDropTarget
                         {
                             override fun onExited(event: DragAndDropEvent)
                             {
-                                println("======> onExited:" + event)
+                                // println("======> onExited:" + event)
                                 isDragging = false
                             }
 
                             override fun onEntered(event: DragAndDropEvent)
                             {
                                 isDragging = true
-                                println("======> onEntered:" + event)
+                                // println("======> onEntered:" + event)
                             }
 
                             override fun onChanged(event: DragAndDropEvent)
                             {
-                                println("======> onChanged:" + event)
+                                // println("======> onChanged:" + event)
                             }
 
                             override fun onStarted(event: DragAndDropEvent) {
-                                println("======> onStarted:" + event + " " + event.dragData())
+                                // println("======> onStarted:" + event + " " + event.dragData())
                             }
                             override fun onEnded(event: DragAndDropEvent) {
                                 isDragging = false
-                                println("======> onEnded:" + event)
+                                // println("======> onEnded:" + event)
                             }
                             override fun onDrop(event: DragAndDropEvent): Boolean {
                                 isDragging = false
-                                println("======> onDrop:" + event + " " + event.dragData())
+                                // println("======> onDrop:" + event + " " + event.dragData())
                                 if (event.dragData() is DragData.FilesList)
                                 {
-                                    println("======> onDrop:" + event)
+                                    // println("======> onDrop:" + event)
                                     val newFiles = (event.dragData() as DragData.FilesList).readFiles().mapNotNull { it1: String ->
                                         URI(it1).toPath().takeIf { it.exists(LinkOption.NOFOLLOW_LINKS) }
                                     }
                                     newFiles.forEach {
-                                        // Log.i(TAG, "dropped file: " + it.toAbsolutePath() + " " + it.parent.normalize().name + " " + it.fileName.name)
                                         if (it.toAbsolutePath().toString().isNotEmpty()) {
-                                            println(" " + it.toAbsolutePath().parent.toString() + " "
-                                                    + it.toAbsolutePath().fileName.toString())
+                                            // Log.i(TAG," " + it.toAbsolutePath().parent.toString() + " "
+                                            //        + it.toAbsolutePath().fileName.toString() + " " + selectedContactPubkey)
+                                            add_outgoing_file(it.toAbsolutePath().parent.toString(),
+                                                it.toAbsolutePath().fileName.toString(),
+                                                selectedContactPubkey)
                                         }
                                     }
                                 }
                                 else if (event.dragData() is DragData.Image)
                                 {
-                                    println("======> onDrop:iiiii " + event + " " + (event.dragData() as DragData.Image).toString())
+                                    // println("======> onDrop:iiiii " + event + " " + (event.dragData() as DragData.Image).toString())
                                 }
                                 else if (event.dragData() is DragData.Text)
                                 {
-                                    println("======> onDrop:ttttt " + event + " " + (event.dragData() as DragData.Text).readText())
+                                    // println("======> onDrop:ttttt " + event + " " + (event.dragData() as DragData.Text).readText())
                                 }
                                 else
                                 {
-                                    println("======> onDrop:uuuuu " + event + " " + event.dragData())
+                                    // println("======> onDrop:uuuuu " + event + " " + event.dragData())
                                 }
                                 isDragging = false
                                 return true
@@ -480,61 +481,61 @@ fun GroupApp(focusRequester: FocusRequester, displayTextField: Boolean = true, s
                 Column(modifier = Modifier.fillMaxSize()) {
                     var isDragging by remember { mutableStateOf(false) }
 
-                    val dragAndDropTarget = remember {
+                    val dragAndDropTarget = remember(selectedGroupId) {
                         object: DragAndDropTarget
                         {
                             override fun onExited(event: DragAndDropEvent)
                             {
-                                println("======> onExited:" + event)
+                                // println("======> onExited:" + event)
                                 isDragging = false
                             }
 
                             override fun onEntered(event: DragAndDropEvent)
                             {
                                 isDragging = true
-                                println("======> onEntered:" + event)
+                                // println("======> onEntered:" + event)
                             }
 
                             override fun onChanged(event: DragAndDropEvent)
                             {
-                                println("======> onChanged:" + event)
+                                // println("======> onChanged:" + event)
                             }
 
                             override fun onStarted(event: DragAndDropEvent) {
-                                println("======> onStarted:" + event + " " + event.dragData())
+                                // println("======> onStarted:" + event + " " + event.dragData())
                             }
                             override fun onEnded(event: DragAndDropEvent) {
                                 isDragging = false
-                                println("======> onEnded:" + event)
+                                // println("======> onEnded:" + event)
                             }
                             override fun onDrop(event: DragAndDropEvent): Boolean {
                                 isDragging = false
-                                println("======> onDrop:" + event + " " + event.dragData())
                                 if (event.dragData() is DragData.FilesList)
                                 {
-                                    println("======> onDrop:" + event)
                                     val newFiles = (event.dragData() as DragData.FilesList).readFiles().mapNotNull { it1: String ->
                                         URI(it1).toPath().takeIf { it.exists(LinkOption.NOFOLLOW_LINKS) }
                                     }
                                     newFiles.forEach {
                                         // Log.i(TAG, "dropped file: " + it.toAbsolutePath() + " " + it.parent.normalize().name + " " + it.fileName.name)
                                         if (it.toAbsolutePath().toString().isNotEmpty()) {
-                                            println(" " + it.toAbsolutePath().parent.toString() + " "
-                                                    + it.toAbsolutePath().fileName.toString())
+                                            // Log.i(TAG," " + it.toAbsolutePath().parent.toString() + " "
+                                            //      + it.toAbsolutePath().fileName.toString() + " " + selectedGroupId)
+                                            add_ngc_outgoing_file(it.toAbsolutePath().parent.toString(),
+                                                it.toAbsolutePath().fileName.toString(), selectedGroupId)
                                         }
                                     }
                                 }
                                 else if (event.dragData() is DragData.Image)
                                 {
-                                    println("======> onDrop:iiiii " + event + " " + (event.dragData() as DragData.Image).toString())
+                                    // println("======> onDrop:iiiii " + event + " " + (event.dragData() as DragData.Image).toString())
                                 }
                                 else if (event.dragData() is DragData.Text)
                                 {
-                                    println("======> onDrop:ttttt " + event + " " + (event.dragData() as DragData.Text).readText())
+                                    // println("======> onDrop:ttttt " + event + " " + (event.dragData() as DragData.Text).readText())
                                 }
                                 else
                                 {
-                                    println("======> onDrop:uuuuu " + event + " " + event.dragData())
+                                    // println("======> onDrop:uuuuu " + event + " " + event.dragData())
                                 }
                                 isDragging = false
                                 return true
