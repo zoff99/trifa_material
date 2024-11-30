@@ -487,11 +487,12 @@ else
     echo "***** ASAN *****"
     echo "***** ASAN *****"
     echo "***** ASAN *****"
-    # enable H265 encoder only on the ASAN build for linux (for now)
+    # enable H265 encoder
     h265_feature="yes"
     CFLAGS_ASAN="-fsanitize=address -fno-omit-frame-pointer -fsanitize-recover=address -static-libasan"
   else
-    h265_feature="no"
+    # enable H265 encoder also on the regular builds
+    h265_feature="yes"
     CFLAGS_ASAN=""
   fi
   ./configure \
