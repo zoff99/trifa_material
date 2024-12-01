@@ -163,7 +163,7 @@ export LDFLAGS=" "
   ./configure \
               --enable-gpl \
               --prefix="$_INST_" \
-              --disable-asm \
+              --enable-asm \
               --enable-pic \
               --disable-swscale \
               --disable-network \
@@ -426,6 +426,7 @@ cd x264/
                                          --enable-pic || exit 
   else
     ./configure \
+                                         --enable-asm \
                                          --prefix="$_INST_" \
                                          --disable-opencl \
                                          --enable-static \
