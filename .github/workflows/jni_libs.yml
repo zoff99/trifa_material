@@ -24,6 +24,7 @@ jobs:
   build-macos-jni-artifact:
     name: JNI Artifact macOS Build
     runs-on: macos-13
+    if: ${{ false }}
     permissions:
       contents: write
     steps:
@@ -79,6 +80,7 @@ jobs:
   build-macos_arm64-jni-artifact:
     name: JNI Artifact macOS arm64 Build
     runs-on: macos-14
+    if: ${{ false }}
     permissions:
       contents: write
     steps:
@@ -135,7 +137,7 @@ jobs:
     name: JNI Artifact Raspi Build
     runs-on: ubuntu-22.04
     if: |
-      true
+      false
     permissions:
       contents: write
     steps:
@@ -247,6 +249,7 @@ jobs:
   build-windows-jni-artifact:
     name: JNI Artifact Windows Build
     runs-on: ubuntu-22.04
+    if: ${{ false }}
     permissions:
       contents: write
     steps:
