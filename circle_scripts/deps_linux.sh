@@ -69,12 +69,12 @@ cd x265_git/
   export CFLAGS=${CFLAGS_ADDON}
 
   # fix ratecontrol while streaming --------------------
-  echo "#####ratecontrolfix#####"
-  sed -i -e \
-  's#m_param->rc.bitrate = m_param->rc.vbvMaxBitrate#m_param->rc.vbvMaxBitrate = m_param->rc.bitrate#g' \
-  ./encoder/ratecontrol.cpp
-  git diff ./encoder/ratecontrol.cpp
-  echo "#####ratecontrolfix#####"
+  #echo "#####ratecontrolfix#####"
+  #sed -i -e \
+  #'s#m_param->rc.bitrate = m_param->rc.vbvMaxBitrate#m_param->rc.vbvMaxBitrate = m_param->rc.bitrate#g' \
+  #./encoder/ratecontrol.cpp
+  #git diff ./encoder/ratecontrol.cpp
+  #echo "#####ratecontrolfix#####"
   # fix ratecontrol while streaming --------------------
 
   if [ "$1""x" == "raspix" ]; then
