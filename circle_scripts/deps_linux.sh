@@ -471,7 +471,8 @@ else
 fi
 cd c-toxcore/
 ############## git checkout "zoff99/zoxcore_local_fork"
-git checkout "x265_debug"
+# git checkout "x265_debug"
+git checkout "e2cf703e4500764a7a9172f7ec06b2e2d6514191"
 
 # ------ set c-toxcore git commit hash ------
 git_hash_for_toxcore=$(git rev-parse --verify --short=8 HEAD 2>/dev/null|tr -dc '[A-Fa-f0-9]' 2>/dev/null)
