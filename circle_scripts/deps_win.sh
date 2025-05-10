@@ -110,6 +110,7 @@ cd *mpeg*/
               --disable-demuxers \
               --disable-parsers \
               --disable-bsfs \
+              --disable-ffmpeg --disable-ffprobe \
               --enable-runtime-cpudetect \
               --enable-parser=h264 \
               --enable-decoder=h264 || exit 1

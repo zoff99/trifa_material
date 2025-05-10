@@ -113,6 +113,7 @@ export LDFLAGS=" "
               --disable-coreimage \
               --disable-avfoundation \
               --disable-securetransport \
+              --disable-ffmpeg --disable-ffprobe \
               --enable-parser=h264 \
               --enable-decoder=h264 || exit 1
 
