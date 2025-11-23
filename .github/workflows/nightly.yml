@@ -40,10 +40,24 @@ jobs:
       - name: show java version
         run:  type -a java;java -version
 
-      - name: build package
-        run:  id;pwd;ls -al;./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 packageReleaseDistributionForCurrentOS
+      - name: build package 1
+        run: |
+           id;pwd;ls -al
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 clean # always clean first
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 packageReleaseDistributionForCurrentOS
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 clean packageReleaseUberJarForCurrentOS
 
-      - name: build jar
-        run:  id;pwd;ls -al;./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 clean packageReleaseUberJarForCurrentOS
+      - name: build package 2
+        run: |
+           id;pwd;ls -al
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 clean # always clean first
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 packageReleaseDistributionForCurrentOS
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 packageReleaseUberJarForCurrentOS
+
+      - name: build package 3
+        run: |
+           id;pwd;ls -al
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 clean # always clean first
+           ./gradlew -Dorg.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64 clean packageReleaseDistributionForCurrentOS packageReleaseUberJarForCurrentOS
 
 
