@@ -1,9 +1,7 @@
 @file:Suppress("SpellCheckingInspection", "ConvertToStringTemplate", "RemoveSingleExpressionStringTemplate")
 
 package org.briarproject.briar.desktop.ui
-
 // import com.zoffcc.applications.trifa_material.trifa_material.BuildConfig
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,26 +12,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterStart
 import androidx.compose.ui.Alignment.Companion.CenterVertically
-import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.contentDescription
@@ -43,67 +32,11 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import com.zoffcc.applications.trifa_material.trifa_material.BuildConfig
-import kotlinx.coroutines.DelicateCoroutinesApi
 import org.briarproject.briar.desktop.utils.InternationalizationUtils.i18n
 
 @Composable
-fun AboutScreen(
-    onBackButton: () -> Unit,
-) = Box {
-    AboutScreen()
-
-    IconButton(
-        icon = Icons.Filled.ArrowBack,
-        contentDescription = i18n("ui.return_to_previous_screen"),
-        onClick = onBackButton,
-        modifier = Modifier.align(TopStart)
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class, DelicateCoroutinesApi::class)
-@Composable
-fun AboutScreen(modifier: Modifier = Modifier.padding(16.dp))
-{
-    Column(modifier) {
-        Row(
-            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
-            verticalAlignment = CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-        }
-        var show_link_click by remember { mutableStateOf(false) }
-        var link_str by remember { mutableStateOf("") }
-        show_report_bug_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-            show_link_click = show_link_click_
-            link_str = link_str_
-        }
-
-
-        Row(Modifier.wrapContentHeight().padding(start = 15.dp)) {
-            Button(modifier = Modifier.width(200.dp),
-                enabled = true,
-                onClick = {})
-            {
-                Text(i18n("ui.about.report_bug"))
-            }
-        }
-        var state by remember { mutableStateOf(0) }
-        val titles = listOf(i18n("ui.about.category_general"), i18n("ui.about.category_dependencies"))
-        /*
-        TabRow(selectedTabIndex = state, backgroundColor = MaterialTheme.colors.background) {
-            titles.forEachIndexed { index, title ->
-                Tab(
-                    text = { Text(title) },
-                    selected = state == index,
-                    onClick = { state = index }
-                )
-            }
-        }
-        when (state) {
-            0 -> GeneralInfo()
-            1 -> Libraries()
-        }
-        */
+fun AboutScreen() = Box {
+    Column() {
         GeneralInfo()
     }
 }
@@ -121,6 +54,10 @@ private fun GeneralInfo()
         add(Entry(i18n("about.kotlin_compiler_used_version"), BuildConfig.KOTLIN_VERSION))
     }
 
+    Text(
+        text = "" + lines,
+        modifier = Modifier.padding(top = 1.dp)
+    )
     println("xx: " + lines)
 }
 
