@@ -56,7 +56,7 @@ private fun GeneralInfo()
 
     Text(
         text = "" + lines,
-        modifier = Modifier.padding(top = 1.dp)
+        modifier = Modifier.padding(10.dp)
     )
     println("xx: " + lines)
 }

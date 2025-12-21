@@ -3,6 +3,10 @@
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -15,6 +19,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import kotlinx.coroutines.DelicateCoroutinesApi
 import org.briarproject.briar.desktop.ui.AboutScreen
 
@@ -27,14 +32,19 @@ fun main(args: Array<String>) = application(exitProcessOnExit = true) {
 @Composable
 private fun MainAppStart()
 {
+    var isOpen by remember { mutableStateOf(true) }
+
     // ----------- main app screen -----------
     // ----------- main app screen -----------
     // ----------- main app screen -----------
-    Window(onCloseRequest = { },
-        title = "test",
-        focusable = true
-    ) {
-        AboutScreen()
+    if (isOpen)
+    {
+        Window(onCloseRequest = { isOpen = false },
+            title = "test",
+            focusable = true
+        ) {
+            AboutScreen()
+        }
     }
     // ----------- main app screen -----------
     // ----------- main app screen -----------
