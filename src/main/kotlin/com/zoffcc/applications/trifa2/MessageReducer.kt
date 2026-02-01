@@ -1,3 +1,5 @@
+@file:Suppress("PropertyName")
+
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
@@ -84,8 +86,8 @@ fun chatReducer(state: MessageState, action: MessageAction): MessageState = when
             {
                 Log.i(TAG, "UpdateMessage:ft=null");
                 state.messages[item_position] = item.copy(file_state = action.message_db.state, filename_fullpath = null, currentfilepos = 0, previousfilepos = 0, previousfileposTimeMs = 0,
-                    startfileposTimeMs = 0,
-                    currentfileposTimeMs = 0,
+                    startfileposTimeMs = System.currentTimeMillis(),
+                    currentfileposTimeMs = System.currentTimeMillis(),
                     filesize = 0)
             }
         }
