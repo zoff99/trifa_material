@@ -481,7 +481,7 @@ public class HelperMessage {
      */
     public static MainActivity.Companion.send_message_result tox_friend_send_message_wrapper(final String friend_pubkey, int a_TOX_MESSAGE_TYPE, String message, long timestamp_unixtime_seconds)
     {
-        Log.i(TAG, "tox_friend_send_message_wrapper:" + friend_pubkey);
+        // Log.i(TAG, "tox_friend_send_message_wrapper:" + friend_pubkey);
         FriendList f = main_get_friend(friend_pubkey);
         if (f == null)
         {
@@ -498,9 +498,9 @@ public class HelperMessage {
         {
             msgv1 = false;
         }
-        Log.i(TAG, "tox_friend_send_message_wrapper:msgv1=" + msgv1);
+        // Log.i(TAG, "tox_friend_send_message_wrapper:msgv1=" + msgv1);
 
-        Log.i(TAG, "tox_friend_send_message_wrapper:f conn=" + fconnstatus);
+        // Log.i(TAG, "tox_friend_send_message_wrapper:f conn=" + fconnstatus);
         if (fconnstatus == TOX_CONNECTION_NONE.value)
         {
             String relay_pubkey = HelperRelay.get_relay_for_friend(friend_pubkey);
@@ -527,13 +527,13 @@ public class HelperMessage {
             // long t_sec = (System.currentTimeMillis() / 1000);
             long res = MainActivity.tox_messagev3_friend_send_message(friendnum_to_use, a_TOX_MESSAGE_TYPE, message,
                     hash_bytes, timestamp_unixtime_seconds);
-            Log.i(TAG, "tox_friend_send_message_wrapper:msg=" + message + " " + timestamp_unixtime_seconds);
+            // Log.i(TAG, "tox_friend_send_message_wrapper:msg=" + message + " " + timestamp_unixtime_seconds);
 
             result.msg_num = res;
             result.msg_v2 = false;
             result.msg_hash_hex = "";
             result.msg_hash_v3_hex = bytebuffer_to_hexstring(hash_bytes, true);
-            Log.i(TAG, "tox_friend_send_message_wrapper:msg_hash_v3_hex=" + result.msg_hash_v3_hex);
+            // Log.i(TAG, "tox_friend_send_message_wrapper:msg_hash_v3_hex=" + result.msg_hash_v3_hex);
             result.raw_message_buf_hex = "";
 
             if (need_call_push_url)
