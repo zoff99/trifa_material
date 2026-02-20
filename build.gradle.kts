@@ -38,14 +38,14 @@ try
     os_java_runtime_version = System.getProperty("java.runtime.version")
     os_java_vm_version = System.getProperty("java.vm.version")
 
-    println("*** Building on ${os!!.familyName} / ${os!!.name} / ${os!!.version} / ${System.getProperty("os.arch")}.")
-    println("*** os_java_home: $os_java_home.")
-    println("*** os_java_runtime_version: $os_java_runtime_version.")
-    println("*** os_java_vm_version: $os_java_vm_version.")
+    System.err.println("*** Building on ${os!!.familyName} / ${os!!.name} / ${os!!.version} / ${System.getProperty("os.arch")}.")
+    System.err.println("*** os_java_home: $os_java_home.")
+    System.err.println("*** os_java_runtime_version: $os_java_runtime_version.")
+    System.err.println("*** os_java_vm_version: $os_java_vm_version.")
 }
 catch(_: Exception)
 {
-    println("some Error detecting OS for Java")
+    System.err.println("some Error detecting OS for Java")
 }
 
 repositories {
@@ -158,19 +158,19 @@ dependencies {
         if ((os!!.isLinux) && (os_arch == "amd64") && (!running_on_nixos) && (!build_with_appimage))
         {
             // on "Linux amd64" use "sqlite-jdbc" with sqlcipher included (which is a dropin replacement for sqlite-jdbc)
-            println("Linux amd64 -> unsing pkgs_zoffcc_sqlite-jdbc-sqlcipher")
+            System.err.println("Linux amd64 -> unsing pkgs_zoffcc_sqlite-jdbc-sqlcipher")
             implementation("com.github.zoff99:pkgs_zoffcc_sqlite-jdbc-sqlcipher:1.0.22")
         } else
         {
             // use regular "sqlite-jdbc"
-            println("other OS -> unsing org.xerial:sqlite-jdbc")
+            System.err.println("other OS -> unsing org.xerial:sqlite-jdbc")
             implementation("org.xerial:sqlite-jdbc:3.51.2.0")
         }
     }
     catch(_: Exception)
     {
         // use regular "sqlite-jdbc"
-        println("error detecting OS -> unsing org.xerial:sqlite-jdbc")
+        System.err.println("error detecting OS -> unsing org.xerial:sqlite-jdbc")
         implementation("org.xerial:sqlite-jdbc:3.51.2.0")
     }
     // ------- SQLITE / SQLCIPHER implementation -------
@@ -217,17 +217,17 @@ compose.desktop {
         nativeDistributions {
             packageName = appName
             packageVersion = "${project.version}"
-            println("packageVersion=$packageVersion")
+            System.err.println("packageVersion=$packageVersion")
             description = "TRIfA Material App"
             copyright = "© 2023 Zoff. All rights reserved."
             vendor = "Zoxcore"
             licenseFile.set(project.file("LICENSE"))
-            println("licenseFile=" + project.file("LICENSE"))
+            System.err.println("licenseFile=" + project.file("LICENSE"))
             appResourcesRootDir.set(project.layout.projectDirectory.dir("resources"))
 
             if (build_with_appimage)
             {
-                println("#### build with AppImage ####")
+                System.err.println("#### build with AppImage ####")
                 targetFormats(
                     TargetFormat.Msi, TargetFormat.Exe,
                     TargetFormat.Dmg,
@@ -236,7 +236,7 @@ compose.desktop {
             }
             else
             {
-                println("==== build without AppImage ====")
+                System.err.println("==== build without AppImage ====")
                 targetFormats(
                     TargetFormat.Msi, TargetFormat.Exe,
                     TargetFormat.Dmg,
@@ -250,14 +250,14 @@ compose.desktop {
             }
 
             val iconsRoot = project.file("resources")
-            println("iconsRoot=$iconsRoot")
+            System.err.println("iconsRoot=$iconsRoot")
             macOS {
                 // --- scrimage needs this set ONLY for macos arm
                 // --- scrimage needs this set ONLY for macos arm
                 // jvmArgs += listOf("-Dcom.sksamuel.scrimage.webp.platform=mac-arm64")
                 // --- scrimage needs this set ONLY for macos arm
                 // --- scrimage needs this set ONLY for macos arm
-                println("iconFile=" + iconsRoot.resolve("icon-mac.icns"))
+                System.err.println("iconFile=" + iconsRoot.resolve("icon-mac.icns"))
                 iconFile.set(iconsRoot.resolve("icon-mac.icns"))
                 bundleID = "com.zoffcc.applications.trifamaterial"
                 // HINT: https://github.com/JetBrains/compose-multiplatform/blob/master/tutorials/Signing_and_notarization_on_macOS/README.md
@@ -279,7 +279,7 @@ compose.desktop {
             }
             windows {
                 iconFile.set(iconsRoot.resolve("icon-windows.ico"))
-                println("iconFile=" + iconsRoot.resolve("icon-windows.ico"))
+                System.err.println("iconFile=" + iconsRoot.resolve("icon-windows.ico"))
                 menuGroup = "TRIfA Material"
                 // see https://wixtoolset.org/documentation/manual/v3/howtos/general/generate_guids.html
                 // and https://www.guidgen.com/
@@ -287,10 +287,10 @@ compose.desktop {
             }
             linux {
                 iconFile.set(iconsRoot.resolve("icon-linux.png"))
-                println("iconFile=" + iconsRoot.resolve("icon-linux.png"))
+                System.err.println("iconFile=" + iconsRoot.resolve("icon-linux.png"))
             }
 
-            println("targetFormats=" + targetFormats)
+            System.err.println("targetFormats=" + targetFormats)
 
             // XX // jvmArgs += "-splash:resources/splash_screen.png"
             // XX // jvmArgs += "-splash:${'$'}APPDIR/app/resources/splash_screen.png"
@@ -300,9 +300,9 @@ compose.desktop {
             jvmArgs += "-splash:${'$'}APPDIR/resources/splash_screen.png"
             // --> for gradlew run --> // jvmArgs += "-splash:resources/splash_screen.png"
             // -----------------------------------------------------------------
-            println("jvmArgs=" + jvmArgs)
+            System.err.println("jvmArgs=" + jvmArgs)
             // val ENV = System.getenv()
-            // println("ENV_all=" + ENV.keys)
+            // System.err.println("ENV_all=" + ENV.keys)
         }
     }
 }
@@ -354,10 +354,10 @@ tasks {
 
     val copyAppimageIconfile by registering(Exec::class) {
         environment("ARCH", "x86_64")
-        println("iconFile_src=" + linuxIconFile)
-        println("iconFile_dst=" + "${linuxAppDir}/trifa_material.png")
+        System.err.println("iconFile_src=" + linuxIconFile)
+        System.err.println("iconFile_dst=" + "${linuxAppDir}/trifa_material.png")
         @Suppress("RemoveSingleExpressionStringTemplate", "RemoveCurlyBracesFromTemplate")
-        println("appName=" + "${appName}")
+        System.err.println("appName=" + "${appName}")
         commandLine("cp", "-v", linuxIconFile, "${linuxAppDir}/trifa_material.png")
     }
 
@@ -373,7 +373,9 @@ tasks {
         dependsOn(setAppimageRunfile)
         environment("ARCH", "x86_64")
         @Suppress("RemoveCurlyBracesFromTemplate")
-        println("cmd: " + "${appImageTool} ${linuxAppDir} $appName-${project.version}-x86_64.AppImage")
+        System.err.println("cmd: " + "${appImageTool} ${linuxAppDir} $appName-${project.version}-x86_64.AppImage")
         commandLine(appImageTool, linuxAppDir, "$appName-${project.version}-x86_64.AppImage")
     }
 }
+
+apply(from = "gradle_witness_ng_desktop.gradle")
