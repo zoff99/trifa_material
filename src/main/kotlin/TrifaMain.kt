@@ -957,7 +957,6 @@ fun App()
 
 
 
-
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
@@ -1226,7 +1225,7 @@ fun App()
                                                                     Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
                                                                         avstatestore.state.audio_in_source_set(""); audio_in_sources.clear(); avstatestore.state.audio_in_device_set(device); expanded_a = false
                                                                     }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold) }
                                                                     }
                                                                 }
                                                             }
@@ -1266,7 +1265,7 @@ fun App()
                                                             audio_in_sources.forEach { source ->
                                                                 if (source != null) {
                                                                     Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.audio_in_source_set(source.id); expanded_as = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold) }
                                                                     }
                                                                 }
                                                             }
@@ -1304,7 +1303,7 @@ fun App()
                                                             video_in_devices.forEach { device ->
                                                                 if (device != null) {
                                                                     Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); video_in_sources.clear(); avstatestore.state.video_in_device_set(device); expanded_v = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold) }
                                                                     }
                                                                 }
                                                             }
@@ -1342,7 +1341,7 @@ fun App()
                                                             video_in_sources.forEach { source ->
                                                                 if (source != null) {
                                                                     Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(source.id); expanded_vs = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold) }
                                                                     }
                                                                 }
                                                             }
@@ -1434,6 +1433,9 @@ fun App()
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
+
+
+
 
                         }
                         Column(modifier = Modifier.randomDebugBorder().padding(4.dp)) {
