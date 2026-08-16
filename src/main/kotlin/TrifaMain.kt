@@ -78,6 +78,7 @@ import androidx.compose.material.icons.filled.VideoLabel
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -971,6 +972,7 @@ fun App()
                             var fps_info_str = "" + fps_int
                             if (fps_int == -1) { fps_info_str = "Default" }
 
+                            @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
                             @Composable
                             fun CompactSelectorRow(
                                 icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -978,55 +980,79 @@ fun App()
                                 value: String?,
                                 onClick: () -> Unit
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(36.dp) // Ultra-compact height for desktop
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                                        .padding(start = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                val tooltipState = androidx.compose.material3.rememberTooltipState()
+
+                                androidx.compose.material3.TooltipBox(
+                                    positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                    tooltip = {
+                                        PlainTooltip {
+                                            Column(modifier = Modifier.padding(8.dp)) {
+                                                Text(
+                                                    text = title,
+                                                    style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = (value ?: "").ifEmpty { "None" },
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
+                                    },
+                                    state = tooltipState,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = title,
-                                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            lineHeight = 12.sp,
-                                            fontSize = 10.sp
-                                        )
-                                        Text(
-                                            text = (value ?: "").ifEmpty { "None" },
-                                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            lineHeight = 14.sp,
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                    androidx.compose.material3.IconButton(
-                                        onClick = onClick,
-                                        modifier = Modifier.size(36.dp)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(36.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                            .padding(start = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Filled.KeyboardArrowDown,
-                                            contentDescription = "Select",
+                                            imageVector = icon,
+                                            contentDescription = null,
                                             tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column(
+                                            modifier = Modifier.weight(1f),
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = title,
+                                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                lineHeight = 12.sp,
+                                                fontSize = 10.sp
+                                            )
+                                            Text(
+                                                text = (value ?: "").ifEmpty { "None" },
+                                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                lineHeight = 14.sp,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                        androidx.compose.material3.IconButton(
+                                            onClick = onClick,
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.KeyboardArrowDown,
+                                                contentDescription = "Select",
+                                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1355,7 +1381,6 @@ fun App()
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
-
 
                         }
                         Column(modifier = Modifier.randomDebugBorder().padding(4.dp)) {
