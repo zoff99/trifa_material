@@ -959,7 +959,6 @@ fun App()
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
-
                             var expanded_a by remember { mutableStateOf(false) }
                             var expanded_v by remember { mutableStateOf(false) }
                             var expanded_as by remember { mutableStateOf(false) }
@@ -981,12 +980,6 @@ fun App()
                                 scrollState: androidx.compose.foundation.ScrollState,
                                 modifier: Modifier = Modifier
                             ) {
-                                val targetAlpha = if (scrollState.isScrollInProgress) 1f else 0f
-                                val alpha by androidx.compose.animation.core.animateFloatAsState(
-                                    targetValue = targetAlpha,
-                                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 300)
-                                )
-
                                 if (scrollState.maxValue > 0) {
                                     androidx.compose.foundation.layout.BoxWithConstraints(
                                         modifier = modifier
@@ -1005,7 +998,7 @@ fun App()
                                                     .height(thumbHeight.dp)
                                                     .fillMaxWidth()
                                                     .clip(RoundedCornerShape(3.dp))
-                                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f * alpha))
+                                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                                             )
                                         }
                                     }
@@ -1422,7 +1415,6 @@ fun App()
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
-
 
 
                         }
