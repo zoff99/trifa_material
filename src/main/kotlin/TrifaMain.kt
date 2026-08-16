@@ -980,29 +980,8 @@ fun App()
                                 value: String?,
                                 onClick: () -> Unit
                             ) {
-                                val tooltipState = androidx.compose.material3.rememberTooltipState()
-
-                                androidx.compose.material3.TooltipBox(
-                                    positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                                    tooltip = {
-                                        PlainTooltip {
-                                            Column(modifier = Modifier.padding(8.dp)) {
-                                                Text(
-                                                    text = title,
-                                                    style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Spacer(modifier = Modifier.height(2.dp))
-                                                Text(
-                                                    text = (value ?: "").ifEmpty { "None" },
-                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
-                                                )
-                                            }
-                                        }
-                                    },
-                                    state = tooltipState,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
+                                Tooltip(text = (value ?: "").ifEmpty { "None" })
+                                {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
