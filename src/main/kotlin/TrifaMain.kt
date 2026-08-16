@@ -1162,7 +1162,7 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Audio Device", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose an audio input device from the list below:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Box(modifier = Modifier.weight(weight = 1f, fill = false).heightIn(max = 300.dp)) {
+                                                Box(modifier = Modifier.heightIn(max = 300.dp)) {
                                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                                                         if (audio_in_devices.isNotEmpty()) {
                                                             items(audio_in_devices) { device ->
@@ -1201,7 +1201,7 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Audio Source", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose an audio source for the selected device:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Box(modifier = Modifier.weight(weight = 1f, fill = false).heightIn(max = 300.dp)) {
+                                                Box(modifier = Modifier.heightIn(max = 300.dp)) {
                                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                                                         if (audio_in_sources.isNotEmpty()) {
                                                             items(audio_in_sources) { source ->
@@ -1236,7 +1236,7 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Video Device", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose a video input device from the list below:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Box(modifier = Modifier.weight(weight = 1f, fill = false).heightIn(max = 300.dp)) {
+                                                Box(modifier = Modifier.heightIn(max = 300.dp)) {
                                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                                                         if (video_in_devices.isNotEmpty()) {
                                                             items(video_in_devices) { device ->
@@ -1271,7 +1271,7 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Video Source", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose a video source for the selected device:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Box(modifier = Modifier.weight(weight = 1f, fill = false).heightIn(max = 300.dp)) {
+                                                Box(modifier = Modifier.heightIn(max = 300.dp)) {
                                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                                                         if (video_in_sources.isNotEmpty()) {
                                                             items(video_in_sources) { source ->
@@ -1307,7 +1307,7 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Resolution", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose the video capture resolution:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Box(modifier = Modifier.weight(weight = 1f, fill = false).heightIn(max = 300.dp)) {
+                                                Box(modifier = Modifier.heightIn(max = 300.dp)) {
                                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                                                         items(items) { res ->
                                                             Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
@@ -1338,7 +1338,7 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Capture FPS", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose the video capture frame rate:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Box(modifier = Modifier.weight(weight = 1f, fill = false).heightIn(max = 300.dp)) {
+                                                Box(modifier = Modifier.heightIn(max = 300.dp)) {
                                                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                                                         items(items_capture_fps) { fps ->
                                                             Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
