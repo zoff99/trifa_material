@@ -13,6 +13,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -20,10 +21,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,6 +70,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SafetyCheck
 import androidx.compose.material.icons.filled.VideoLabel
 import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -115,6 +121,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -328,7 +335,7 @@ var NotoEmojiFont: FontFamily? = null
 var DefaultFont: FontFamily? = null
 const val DISPLAY_SINGLE_INSTANCE_INFO = 1000L
 
-@OptIn(DelicateCoroutinesApi::class, ExperimentalFoundationApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun App()
@@ -965,52 +972,119 @@ fun App()
                                         Icon(Icons.Filled.Refresh, null)
                                     }
                                     if (expanded_a) {
-                                        AlertDialog(
+                                        androidx.compose.material3.AlertDialog(
                                             onDismissRequest = { expanded_a = false },
-                                            title = { Text("Select Audio Device") },
-                                            text = {
-                                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                                    if (audio_in_devices.size > 0)
-                                                    {
-                                                        audio_in_devices.forEach() {
-                                                            if (it != null)
-                                                            {
-                                                                Text(
-                                                                    text = "" + it,
+                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                            modifier = Modifier
+                                                .padding(24.dp)
+                                                .wrapContentHeight()
+                                                .widthIn(max = 360.dp),
+                                        ) {
+                                            androidx.compose.material3.Surface(
+                                                shape = RoundedCornerShape(24.dp),
+                                                tonalElevation = 6.dp,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(24.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Select Audio Device",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                    Text(
+                                                        text = "Choose an audio input device from the list below:",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(weight = 1f, fill = false)
+                                                            .heightIn(max = 300.dp)
+                                                    ) {
+                                                        LazyColumn(
+                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                            contentPadding = PaddingValues(vertical = 4.dp)
+                                                        ) {
+                                                            if (audio_in_devices.isNotEmpty()) {
+                                                                items(audio_in_devices) { device ->
+                                                                    if (device != null) {
+                                                                        Row(
+                                                                            modifier = Modifier
+                                                                                .fillMaxWidth()
+                                                                                .clip(RoundedCornerShape(12.dp))
+                                                                                .clickable {
+                                                                                    avstatestore.state.audio_in_source_set("")
+                                                                                    audio_in_sources.clear()
+                                                                                    avstatestore.state.audio_in_device_set(device)
+                                                                                    expanded_a = false
+                                                                                }
+                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                            verticalAlignment = Alignment.CenterVertically
+                                                                        ) {
+                                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                                Text(
+                                                                                    text = device,
+                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                    maxLines = 1,
+                                                                                    overflow = TextOverflow.Ellipsis,
+                                                                                    fontWeight = FontWeight.SemiBold
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            item {
+                                                                Row(
                                                                     modifier = Modifier
                                                                         .fillMaxWidth()
+                                                                        .clip(RoundedCornerShape(12.dp))
                                                                         .clickable {
                                                                             avstatestore.state.audio_in_source_set("")
                                                                             audio_in_sources.clear()
-                                                                            avstatestore.state.audio_in_device_set(it)
+                                                                            avstatestore.state.audio_in_device_set("")
                                                                             expanded_a = false
                                                                         }
-                                                                        .padding(12.dp)
-                                                                )
+                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    Column(modifier = Modifier.weight(1f)) {
+                                                                        Text(
+                                                                            text = "-none-",
+                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis,
+                                                                            fontWeight = FontWeight.SemiBold
+                                                                        )
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                    Text(
-                                                        text = "-none-",
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clickable {
-                                                                avstatestore.state.audio_in_source_set("")
-                                                                audio_in_sources.clear()
-                                                                avstatestore.state.audio_in_device_set("")
-                                                                expanded_a = false
-                                                            }
-                                                            .padding(12.dp)
-                                                    )
-                                                }
-                                            },
-                                            confirmButton = {},
-                                            dismissButton = {
-                                                TextButton(onClick = { expanded_a = false }) {
-                                                    Text("Cancel")
+                                                    Spacer(modifier = Modifier.height(20.dp))
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.End
+                                                    ) {
+                                                        androidx.compose.material3.TextButton(
+                                                            onClick = { expanded_a = false }
+                                                        ) {
+                                                            Text(
+                                                                text = "Cancel",
+                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                                fontWeight = FontWeight.SemiBold
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        )
+                                        }
                                     }
                                 }
                                 Box {
@@ -1074,48 +1148,115 @@ fun App()
                                         Icon(Icons.Filled.Refresh, null)
                                     }
                                     if (expanded_as) {
-                                        AlertDialog(
+                                        androidx.compose.material3.AlertDialog(
                                             onDismissRequest = { expanded_as = false },
-                                            title = { Text("Select Audio Source") },
-                                            text = {
-                                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                                    if (audio_in_sources.size > 0)
-                                                    {
-                                                        audio_in_sources.forEach() {
-                                                            if (it != null)
-                                                            {
-                                                                Text(
-                                                                    text = if (it.description.isEmpty()) it.id else it.description + " (" + it.id + ")",
+                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                            modifier = Modifier
+                                                .padding(24.dp)
+                                                .wrapContentHeight()
+                                                .widthIn(max = 360.dp),
+                                        ) {
+                                            androidx.compose.material3.Surface(
+                                                shape = RoundedCornerShape(24.dp),
+                                                tonalElevation = 6.dp,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(24.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Select Audio Source",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                    Text(
+                                                        text = "Choose an audio source for the selected device:",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(weight = 1f, fill = false)
+                                                            .heightIn(max = 300.dp)
+                                                    ) {
+                                                        LazyColumn(
+                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                            contentPadding = PaddingValues(vertical = 4.dp)
+                                                        ) {
+                                                            if (audio_in_sources.isNotEmpty()) {
+                                                                items(audio_in_sources) { source ->
+                                                                    if (source != null) {
+                                                                        Row(
+                                                                            modifier = Modifier
+                                                                                .fillMaxWidth()
+                                                                                .clip(RoundedCornerShape(12.dp))
+                                                                                .clickable {
+                                                                                    avstatestore.state.audio_in_source_set(source.id)
+                                                                                    expanded_as = false
+                                                                                }
+                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                            verticalAlignment = Alignment.CenterVertically
+                                                                        ) {
+                                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                                Text(
+                                                                                    text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")",
+                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                    maxLines = 1,
+                                                                                    overflow = TextOverflow.Ellipsis,
+                                                                                    fontWeight = FontWeight.SemiBold
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            item {
+                                                                Row(
                                                                     modifier = Modifier
                                                                         .fillMaxWidth()
+                                                                        .clip(RoundedCornerShape(12.dp))
                                                                         .clickable {
-                                                                            avstatestore.state.audio_in_source_set(it.id)
+                                                                            avstatestore.state.audio_in_source_set("")
                                                                             expanded_as = false
                                                                         }
-                                                                        .padding(12.dp)
-                                                                )
+                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    Column(modifier = Modifier.weight(1f)) {
+                                                                        Text(
+                                                                            text = "-none-",
+                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis,
+                                                                            fontWeight = FontWeight.SemiBold
+                                                                        )
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                    Text(
-                                                        text = "-none-",
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clickable {
-                                                                avstatestore.state.audio_in_source_set("")
-                                                                expanded_as = false
-                                                            }
-                                                            .padding(12.dp)
-                                                    )
-                                                }
-                                            },
-                                            confirmButton = {},
-                                            dismissButton = {
-                                                TextButton(onClick = { expanded_as = false }) {
-                                                    Text("Cancel")
+                                                    Spacer(modifier = Modifier.height(20.dp))
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.End
+                                                    ) {
+                                                        androidx.compose.material3.TextButton(
+                                                            onClick = { expanded_as = false }
+                                                        ) {
+                                                            Text(
+                                                                text = "Cancel",
+                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                                fontWeight = FontWeight.SemiBold
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        )
+                                        }
                                     }
                                 }
 
@@ -1134,52 +1275,119 @@ fun App()
                                         Icon(Icons.Filled.Refresh, null)
                                     }
                                     if (expanded_v) {
-                                        AlertDialog(
+                                        androidx.compose.material3.AlertDialog(
                                             onDismissRequest = { expanded_v = false },
-                                            title = { Text("Select Video Device") },
-                                            text = {
-                                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                                    if (video_in_devices.size > 0)
-                                                    {
-                                                        video_in_devices.forEach() {
-                                                            if (it != null)
-                                                            {
-                                                                Text(
-                                                                    text = "" + it,
+                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                            modifier = Modifier
+                                                .padding(24.dp)
+                                                .wrapContentHeight()
+                                                .widthIn(max = 360.dp),
+                                        ) {
+                                            androidx.compose.material3.Surface(
+                                                shape = RoundedCornerShape(24.dp),
+                                                tonalElevation = 6.dp,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(24.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Select Video Device",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                    Text(
+                                                        text = "Choose a video input device from the list below:",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(weight = 1f, fill = false)
+                                                            .heightIn(max = 300.dp)
+                                                    ) {
+                                                        LazyColumn(
+                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                            contentPadding = PaddingValues(vertical = 4.dp)
+                                                        ) {
+                                                            if (video_in_devices.isNotEmpty()) {
+                                                                items(video_in_devices) { device ->
+                                                                    if (device != null) {
+                                                                        Row(
+                                                                            modifier = Modifier
+                                                                                .fillMaxWidth()
+                                                                                .clip(RoundedCornerShape(12.dp))
+                                                                                .clickable {
+                                                                                    avstatestore.state.video_in_source_set("")
+                                                                                    video_in_sources.clear()
+                                                                                    avstatestore.state.video_in_device_set(device)
+                                                                                    expanded_v = false
+                                                                                }
+                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                            verticalAlignment = Alignment.CenterVertically
+                                                                        ) {
+                                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                                Text(
+                                                                                    text = device,
+                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                    maxLines = 1,
+                                                                                    overflow = TextOverflow.Ellipsis,
+                                                                                    fontWeight = FontWeight.SemiBold
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            item {
+                                                                Row(
                                                                     modifier = Modifier
                                                                         .fillMaxWidth()
+                                                                        .clip(RoundedCornerShape(12.dp))
                                                                         .clickable {
                                                                             avstatestore.state.video_in_source_set("")
                                                                             video_in_sources.clear()
-                                                                            avstatestore.state.video_in_device_set(it)
+                                                                            avstatestore.state.video_in_device_set("")
                                                                             expanded_v = false
                                                                         }
-                                                                        .padding(12.dp)
-                                                                )
+                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    Column(modifier = Modifier.weight(1f)) {
+                                                                        Text(
+                                                                            text = "-none-",
+                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis,
+                                                                            fontWeight = FontWeight.SemiBold
+                                                                        )
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                    Text(
-                                                        text = "-none-",
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clickable {
-                                                                avstatestore.state.video_in_source_set("")
-                                                                video_in_sources.clear()
-                                                                avstatestore.state.video_in_device_set("")
-                                                                expanded_v = false
-                                                            }
-                                                            .padding(12.dp)
-                                                    )
-                                                }
-                                            },
-                                            confirmButton = {},
-                                            dismissButton = {
-                                                TextButton(onClick = { expanded_v = false }) {
-                                                    Text("Cancel")
+                                                    Spacer(modifier = Modifier.height(20.dp))
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.End
+                                                    ) {
+                                                        androidx.compose.material3.TextButton(
+                                                            onClick = { expanded_v = false }
+                                                        ) {
+                                                            Text(
+                                                                text = "Cancel",
+                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                                fontWeight = FontWeight.SemiBold
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        )
+                                        }
                                     }
                                 }
                                 Box {
@@ -1258,48 +1466,115 @@ fun App()
                                         Icon(Icons.Filled.Refresh, null)
                                     }
                                     if (expanded_vs) {
-                                        AlertDialog(
+                                        androidx.compose.material3.AlertDialog(
                                             onDismissRequest = { expanded_vs = false },
-                                            title = { Text("Select Video Source") },
-                                            text = {
-                                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                                    if (video_in_sources.size > 0)
-                                                    {
-                                                        video_in_sources.forEach() {
-                                                            if (it != null)
-                                                            {
-                                                                Text(
-                                                                    text = if (it.description.isEmpty()) it.id else it.description + " (" + it.id + ")",
+                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                            modifier = Modifier
+                                                .padding(24.dp)
+                                                .wrapContentHeight()
+                                                .widthIn(max = 360.dp),
+                                        ) {
+                                            androidx.compose.material3.Surface(
+                                                shape = RoundedCornerShape(24.dp),
+                                                tonalElevation = 6.dp,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(24.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Select Video Source",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                    Text(
+                                                        text = "Choose a video source for the selected device:",
+                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .weight(weight = 1f, fill = false)
+                                                            .heightIn(max = 300.dp)
+                                                    ) {
+                                                        LazyColumn(
+                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                            contentPadding = PaddingValues(vertical = 4.dp)
+                                                        ) {
+                                                            if (video_in_sources.isNotEmpty()) {
+                                                                items(video_in_sources) { source ->
+                                                                    if (source != null) {
+                                                                        Row(
+                                                                            modifier = Modifier
+                                                                                .fillMaxWidth()
+                                                                                .clip(RoundedCornerShape(12.dp))
+                                                                                .clickable {
+                                                                                    avstatestore.state.video_in_source_set(source.id)
+                                                                                    expanded_vs = false
+                                                                                }
+                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                            verticalAlignment = Alignment.CenterVertically
+                                                                        ) {
+                                                                            Column(modifier = Modifier.weight(1f)) {
+                                                                                Text(
+                                                                                    text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")",
+                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                    maxLines = 1,
+                                                                                    overflow = TextOverflow.Ellipsis,
+                                                                                    fontWeight = FontWeight.SemiBold
+                                                                                )
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            item {
+                                                                Row(
                                                                     modifier = Modifier
                                                                         .fillMaxWidth()
+                                                                        .clip(RoundedCornerShape(12.dp))
                                                                         .clickable {
-                                                                            avstatestore.state.video_in_source_set(it.id)
+                                                                            avstatestore.state.video_in_source_set("")
                                                                             expanded_vs = false
                                                                         }
-                                                                        .padding(12.dp)
-                                                                )
+                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                    verticalAlignment = Alignment.CenterVertically
+                                                                ) {
+                                                                    Column(modifier = Modifier.weight(1f)) {
+                                                                        Text(
+                                                                            text = "-none-",
+                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                            maxLines = 1,
+                                                                            overflow = TextOverflow.Ellipsis,
+                                                                            fontWeight = FontWeight.SemiBold
+                                                                        )
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                    Text(
-                                                        text = "-none-",
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clickable {
-                                                                avstatestore.state.video_in_source_set("")
-                                                                expanded_vs = false
-                                                            }
-                                                            .padding(12.dp)
-                                                    )
-                                                }
-                                            },
-                                            confirmButton = {},
-                                            dismissButton = {
-                                                TextButton(onClick = { expanded_vs = false }) {
-                                                    Text("Cancel")
+                                                    Spacer(modifier = Modifier.height(20.dp))
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.End
+                                                    ) {
+                                                        androidx.compose.material3.TextButton(
+                                                            onClick = { expanded_vs = false }
+                                                        ) {
+                                                            Text(
+                                                                text = "Cancel",
+                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                                fontWeight = FontWeight.SemiBold
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        )
+                                        }
                                     }
                                 }
                                 var resolution_expanded by remember { mutableStateOf(false) }
@@ -1313,40 +1588,95 @@ fun App()
                                 }
                                 val items = listOf("480x270", "640x360", "640x480", "480x640", "960x540", "720x720", "1024x768", "1280x720", "720x1280", "1080x1080", "1920x1080", "1080x1920")
                                 if (resolution_expanded) {
-                                    AlertDialog(
+                                    androidx.compose.material3.AlertDialog(
                                         onDismissRequest = { resolution_expanded = false },
-                                        title = { Text("Select Resolution") },
-                                        text = {
-                                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                                items.forEachIndexed { index, s ->
-                                                    Text(
-                                                        text = s,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clickable {
-                                                                if (avstatestore.state.calling_state_get() != AVState.CALL_STATUS.CALL_STATUS_CALLING)
-                                                                {
-                                                                    // HINT: only allow to change resolution when no call is active
-                                                                    avstatestore.state.video_in_resolution_set(s)
+                                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                        modifier = Modifier
+                                            .padding(24.dp)
+                                            .wrapContentHeight()
+                                            .widthIn(max = 360.dp),
+                                    ) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(24.dp),
+                                            tonalElevation = 6.dp,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(24.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Select Resolution",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    text = "Choose the video capture resolution:",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(weight = 1f, fill = false)
+                                                        .heightIn(max = 300.dp)
+                                                ) {
+                                                    LazyColumn(
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
+                                                    ) {
+                                                        items(items) { res ->
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(12.dp))
+                                                                    .clickable {
+                                                                        if (avstatestore.state.calling_state_get() != AVState.CALL_STATUS.CALL_STATUS_CALLING)
+                                                                        {
+                                                                            // HINT: only allow to change resolution when no call is active
+                                                                            avstatestore.state.video_in_resolution_set(res)
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            SnackBarToast("Resolution change is only allowed when no call is active")
+                                                                        }
+                                                                        resolution_expanded = false
+                                                                    }
+                                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = res,
+                                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        fontWeight = FontWeight.SemiBold
+                                                                    )
                                                                 }
-                                                                else
-                                                                {
-                                                                    SnackBarToast("Resolution change is only allowed when no call is active")
-                                                                }
-                                                                resolution_expanded = false
                                                             }
-                                                            .padding(12.dp)
-                                                    )
+                                                        }
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(20.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
+                                                    androidx.compose.material3.TextButton(
+                                                        onClick = { resolution_expanded = false }
+                                                    ) {
+                                                        Text(
+                                                            text = "Cancel",
+                                                            style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
+                                                    }
                                                 }
                                             }
-                                        },
-                                        confirmButton = {},
-                                        dismissButton = {
-                                            TextButton(onClick = { resolution_expanded = false }) {
-                                                Text("Cancel")
-                                            }
                                         }
-                                    )
+                                    }
                                 }
                                 var capture_fps_expanded by remember { mutableStateOf(false) }
                                 val fps_int = avstatestore.state.video_capture_fps_get()
@@ -1365,43 +1695,97 @@ fun App()
                                 }
                                 val items_capture_fps = listOf(-1, 5, 10, 15, 20, 24, 25, 30, 60)
                                 if (capture_fps_expanded) {
-                                    AlertDialog(
+                                    androidx.compose.material3.AlertDialog(
                                         onDismissRequest = { capture_fps_expanded = false },
-                                        title = { Text("Select Capture FPS") },
-                                        text = {
-                                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                                items_capture_fps.forEachIndexed { index, s ->
-                                                    Text(
-                                                        text = if (s == -1) "Default" else "" + s,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .clickable {
-                                                                try
-                                                                {
-                                                                    avstatestore.state.video_capture_fps_set(s)
-                                                                } catch (_: Exception)
-                                                                {
+                                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                        modifier = Modifier
+                                            .padding(24.dp)
+                                            .wrapContentHeight()
+                                            .widthIn(max = 360.dp),
+                                    ) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(24.dp),
+                                            tonalElevation = 6.dp,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(24.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Select Capture FPS",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    text = "Choose the video capture frame rate:",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(weight = 1f, fill = false)
+                                                        .heightIn(max = 300.dp)
+                                                ) {
+                                                    LazyColumn(
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
+                                                    ) {
+                                                        items(items_capture_fps) { fps ->
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(12.dp))
+                                                                    .clickable {
+                                                                        try
+                                                                        {
+                                                                            avstatestore.state.video_capture_fps_set(fps)
+                                                                        } catch (_: Exception)
+                                                                        {
+                                                                        }
+                                                                        capture_fps_expanded = false
+                                                                    }
+                                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = if (fps == -1) "Default" else "" + fps,
+                                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        fontWeight = FontWeight.SemiBold
+                                                                    )
                                                                 }
-                                                                capture_fps_expanded = false
                                                             }
-                                                            .padding(12.dp)
-                                                    )
+                                                        }
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(20.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
+                                                    androidx.compose.material3.TextButton(
+                                                        onClick = { capture_fps_expanded = false }
+                                                    ) {
+                                                        Text(
+                                                            text = "Cancel",
+                                                            style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
+                                                    }
                                                 }
                                             }
-                                        },
-                                        confirmButton = {},
-                                        dismissButton = {
-                                            TextButton(onClick = { capture_fps_expanded = false }) {
-                                                Text("Cancel")
-                                            }
                                         }
-                                    )
+                                    }
                                 }
                             }
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
-
 
 
                         }
