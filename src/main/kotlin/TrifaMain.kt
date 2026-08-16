@@ -954,28 +954,6 @@ fun App()
                                 }
                             }
 
-
-
-
-                            // =========== audio and video selectors ===========
-                            // =========== audio and video selectors ===========
-                            // =========== audio and video selectors ===========
-                            var expanded_a by remember { mutableStateOf(false) }
-                            var expanded_v by remember { mutableStateOf(false) }
-                            var expanded_as by remember { mutableStateOf(false) }
-                            var expanded_vs by remember { mutableStateOf(false) }
-                            var resolution_expanded by remember { mutableStateOf(false) }
-                            var capture_fps_expanded by remember { mutableStateOf(false) }
-
-                            val audio_in_devices by remember { mutableStateOf(ArrayList<String>()) }
-                            val audio_in_sources by remember { mutableStateOf(ArrayList<AVActivity.ffmpegav_descrid>()) }
-                            val video_in_devices by remember { mutableStateOf(ArrayList<String>()) }
-                            val video_in_sources by remember { mutableStateOf(ArrayList<AVActivity.ffmpegav_descrid>()) }
-
-                            val fps_int = avstatestore.state.video_capture_fps_get()
-                            var fps_info_str = "" + fps_int
-                            if (fps_int == -1) { fps_info_str = "Default" }
-
                             @Composable
                             fun CustomVerticalScrollbar(
                                 scrollState: androidx.compose.foundation.ScrollState,
@@ -1022,6 +1000,38 @@ fun App()
                                     }
                                 }
                             }
+
+
+                            // =========== audio and video selectors ===========
+                            // =========== audio and video selectors ===========
+                            // =========== audio and video selectors ===========
+                            var expanded_a by remember { mutableStateOf(false) }
+                            var expanded_v by remember { mutableStateOf(false) }
+                            var expanded_as by remember { mutableStateOf(false) }
+                            var expanded_vs by remember { mutableStateOf(false) }
+                            var resolution_expanded by remember { mutableStateOf(false) }
+                            var capture_fps_expanded by remember { mutableStateOf(false) }
+
+                            val audio_in_devices by remember { mutableStateOf(ArrayList<String>()) }
+                            val audio_in_sources by remember { mutableStateOf(ArrayList<AVActivity.ffmpegav_descrid>()) }
+                            val video_in_devices by remember { mutableStateOf(ArrayList<String>()) }
+                            val video_in_sources by remember { mutableStateOf(ArrayList<AVActivity.ffmpegav_descrid>()) }
+
+                            val fps_int = avstatestore.state.video_capture_fps_get()
+                            var fps_info_str = "" + fps_int
+                            if (fps_int == -1) { fps_info_str = "Default" }
+
+                            fun sourceDisplayName(sources: ArrayList<AVActivity.ffmpegav_descrid>, selectedId: String?): String {
+                                if (selectedId == null || selectedId.isEmpty()) return ""
+                                val source = sources.firstOrNull { it != null && it.id == selectedId }
+                                if (source == null) return selectedId
+                                val id = source.id ?: selectedId
+                                val desc = source.description
+                                return if (desc == null || desc.isEmpty()) id else desc + " (" + id + ")"
+                            }
+
+                            val audio_source_display = sourceDisplayName(audio_in_sources, avstatestore.state.audio_in_source_get())
+                            val video_source_display = sourceDisplayName(video_in_sources, avstatestore.state.video_in_source_get())
 
                             @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
                             @Composable
@@ -1124,7 +1134,7 @@ fun App()
                                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
                                         // 2. Audio Source (Top Right)
-                                        CompactSelectorRow(icon = Icons.Filled.MusicNote, title = "Audio Source", value = avstatestore.state.audio_in_source_get()) {
+                                        CompactSelectorRow(icon = Icons.Filled.MusicNote, title = "Audio Source", value = audio_source_display) {
                                             if ((avstatestore.state.audio_in_device_get() != null) && (avstatestore.state.audio_in_device_get() != "")) {
                                                 avstatestore.state.ffmpeg_init_do()
                                                 var audio_in_sources_get: Array<AVActivity.ffmpegav_descrid> = emptyArray()
@@ -1155,7 +1165,7 @@ fun App()
                                         }
 
                                         // 4. Video Source (Middle Right)
-                                        CompactSelectorRow(icon = Icons.Filled.Camera, title = "Video Source", value = avstatestore.state.video_in_source_get()) {
+                                        CompactSelectorRow(icon = Icons.Filled.Camera, title = "Video Source", value = video_source_display) {
                                             if ((avstatestore.state.video_in_device_get() != null) && (avstatestore.state.video_in_device_get() != "")) {
                                                 avstatestore.state.ffmpeg_init_do()
                                                 var video_in_sources_get: Array<AVActivity.ffmpegav_descrid> = emptyArray()
@@ -1433,8 +1443,6 @@ fun App()
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
-
-
 
 
                         }
