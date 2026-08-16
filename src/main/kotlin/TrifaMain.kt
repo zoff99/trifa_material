@@ -54,6 +54,8 @@ import androidx.compose.material.TextButton
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Downloading
@@ -62,13 +64,18 @@ import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.NoiseAware
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.RawOff
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SafetyCheck
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.VideoLabel
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -956,303 +963,194 @@ fun App()
                             val audio_in_sources by remember { mutableStateOf(ArrayList<AVActivity.ffmpegav_descrid>()) }
                             val video_in_devices by remember { mutableStateOf(ArrayList<String>()) }
                             val video_in_sources by remember { mutableStateOf(ArrayList<AVActivity.ffmpegav_descrid>()) }
-                            Column(modifier = Modifier.randomDebugBorder()) {
-                                Text(text = "audio capture: " + avstatestore.state.audio_in_device_get() + " " + avstatestore.state.audio_in_source_get(), fontSize = 12.sp, modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 1)
-                                Box {
-                                    IconButton(onClick = {
-                                        avstatestore.state.ffmpeg_init_do()
-                                        val audio_in_devices_get = AVActivity.ffmpegav_get_audio_in_devices_wrapper()
-                                        println("ffmpeg audio in devices: " + audio_in_devices_get.size)
-                                        audio_in_devices.clear()
-                                        audio_in_devices.addAll(audio_in_devices_get)
-                                        expanded_a = true
-                                    },
-                                        modifier = Modifier.size(AV_SELECTOR_ICON_SIZE)) {
-                                        Icon(Icons.Filled.Refresh, null)
+
+                            @Composable
+                            fun ModernSelectorRow(
+                                icon: androidx.compose.ui.graphics.vector.ImageVector,
+                                title: String,
+                                value: String?,
+                                onClick: () -> Unit
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(
+                                                androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                                                RoundedCornerShape(50)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(24.dp)
+                                        )
                                     }
-                                    if (expanded_a) {
-                                        androidx.compose.material3.AlertDialog(
-                                            onDismissRequest = { expanded_a = false },
-                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                                            modifier = Modifier
-                                                .padding(24.dp)
-                                                .wrapContentHeight()
-                                                .widthIn(max = 360.dp),
-                                        ) {
-                                            androidx.compose.material3.Surface(
-                                                shape = RoundedCornerShape(24.dp),
-                                                tonalElevation = 6.dp,
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
-                                            ) {
-                                                Column(
-                                                    modifier = Modifier.padding(24.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Select Audio Device",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                    )
-                                                    Text(
-                                                        text = "Choose an audio input device from the list below:",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                                                    )
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(weight = 1f, fill = false)
-                                                            .heightIn(max = 300.dp)
-                                                    ) {
-                                                        LazyColumn(
-                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                                                            contentPadding = PaddingValues(vertical = 4.dp)
-                                                        ) {
-                                                            if (audio_in_devices.isNotEmpty()) {
-                                                                items(audio_in_devices) { device ->
-                                                                    if (device != null) {
-                                                                        Row(
-                                                                            modifier = Modifier
-                                                                                .fillMaxWidth()
-                                                                                .clip(RoundedCornerShape(12.dp))
-                                                                                .clickable {
-                                                                                    avstatestore.state.audio_in_source_set("")
-                                                                                    audio_in_sources.clear()
-                                                                                    avstatestore.state.audio_in_device_set(device)
-                                                                                    expanded_a = false
-                                                                                }
-                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                            verticalAlignment = Alignment.CenterVertically
-                                                                        ) {
-                                                                            Column(modifier = Modifier.weight(1f)) {
-                                                                                Text(
-                                                                                    text = device,
-                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                                    maxLines = 1,
-                                                                                    overflow = TextOverflow.Ellipsis,
-                                                                                    fontWeight = FontWeight.SemiBold
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                            item {
-                                                                Row(
-                                                                    modifier = Modifier
-                                                                        .fillMaxWidth()
-                                                                        .clip(RoundedCornerShape(12.dp))
-                                                                        .clickable {
-                                                                            avstatestore.state.audio_in_source_set("")
-                                                                            audio_in_sources.clear()
-                                                                            avstatestore.state.audio_in_device_set("")
-                                                                            expanded_a = false
-                                                                        }
-                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-                                                                    Column(modifier = Modifier.weight(1f)) {
-                                                                        Text(
-                                                                            text = "-none-",
-                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis,
-                                                                            fontWeight = FontWeight.SemiBold
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    Spacer(modifier = Modifier.height(20.dp))
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.End
-                                                    ) {
-                                                        androidx.compose.material3.TextButton(
-                                                            onClick = { expanded_a = false }
-                                                        ) {
-                                                            Text(
-                                                                text = "Cancel",
-                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                                                                fontWeight = FontWeight.SemiBold
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = title,
+                                            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = (value ?: "").ifEmpty { "Not selected" },
+                                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    androidx.compose.material3.IconButton(
+                                        onClick = onClick,
+                                        modifier = Modifier.size(48.dp),
+                                        colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.KeyboardArrowDown,
+                                            contentDescription = "Select",
+                                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(28.dp)
+                                        )
                                     }
                                 }
-                                Box {
-                                    IconButton(onClick = {
-                                        if ((avstatestore.state.audio_in_device_get() != null) && (avstatestore.state.audio_in_device_get() != ""))
-                                        {
-                                            avstatestore.state.ffmpeg_init_do()
-                                            var audio_in_sources_get: Array<AVActivity.ffmpegav_descrid> = emptyArray()
-                                            val tmp = AVActivity.ffmpegav_get_in_sources(avstatestore.state.audio_in_device_get(), 0)
-                                            if (tmp == null)
-                                            {
-                                                if (avstatestore.state.audio_in_device_get() == JAVA_AUDIO_IN_DEVICE_NAME)
-                                                {
-                                                    val tmp0 = AVActivity.ffmpegav_descrid()
-                                                    tmp0.id = "default"
-                                                    val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
-                                                    tmp2.add(tmp0)
-                                                    audio_in_sources_get = tmp2.toTypedArray()
-                                                } else
-                                                {
-                                                    audio_in_sources_get = emptyArray()
-                                                }
-                                            } else if (avstatestore.state.audio_in_device_get() == JAVA_AUDIO_IN_DEVICE_NAME)
-                                            {
-                                                val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
-                                                tmp.iterator().forEach() {
-                                                    if ((it != null) && (it.id != null))
-                                                    {
-                                                        tmp2.add(it)
-                                                    }
-                                                }
-                                                val tmp0 = AVActivity.ffmpegav_descrid()
-                                                tmp0.id = "default"
-                                                tmp2.add(tmp0)
-                                                audio_in_sources_get = tmp2.toTypedArray()
-                                            } else
-                                            {
-                                                val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
-                                                tmp.iterator().forEach() {
-                                                    if ((it != null) && (it.id != null))
-                                                    {
-                                                        tmp2.add(it)
-                                                    }
-                                                }
-                                                audio_in_sources_get = tmp2.toTypedArray()
-                                            }
-                                            // if (avstatestore.state.audio_in_device_get() == "dshow")
-                                            //{
-                                            //    audio_in_sources_get += listOf("audio=" + MainActivity.DB_PREF__windows_audio_in_source + "")
-                                            //}
-                                            audio_in_sources.clear()
-                                            if (audio_in_sources_get.isNotEmpty())
-                                            {
-                                                println("ffmpeg audio in sources: " + audio_in_sources_get.size)
-                                                audio_in_sources.addAll(audio_in_sources_get)
-                                                expanded_as = true
-                                            }
-                                        }
-                                    },
-                                        modifier = Modifier.size(AV_SELECTOR_ICON_SIZE)) {
-                                        Icon(Icons.Filled.Refresh, null)
-                                    }
-                                    if (expanded_as) {
-                                        androidx.compose.material3.AlertDialog(
-                                            onDismissRequest = { expanded_as = false },
-                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                                            modifier = Modifier
-                                                .padding(24.dp)
-                                                .wrapContentHeight()
-                                                .widthIn(max = 360.dp),
+                            }
+
+                            Column(modifier = Modifier.randomDebugBorder()) {
+                                // 1. Audio Device
+                                ModernSelectorRow(
+                                    icon = Icons.Filled.Mic,
+                                    title = "Audio Device",
+                                    value = avstatestore.state.audio_in_device_get()
+                                ) {
+                                    avstatestore.state.ffmpeg_init_do()
+                                    val audio_in_devices_get = AVActivity.ffmpegav_get_audio_in_devices_wrapper()
+                                    println("ffmpeg audio in devices: " + audio_in_devices_get.size)
+                                    audio_in_devices.clear()
+                                    audio_in_devices.addAll(audio_in_devices_get)
+                                    expanded_a = true
+                                }
+                                if (expanded_a) {
+                                    androidx.compose.material3.AlertDialog(
+                                        onDismissRequest = { expanded_a = false },
+                                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                        modifier = Modifier
+                                            .padding(24.dp)
+                                            .wrapContentHeight()
+                                            .widthIn(max = 360.dp),
+                                    ) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(24.dp),
+                                            tonalElevation = 6.dp,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
                                         ) {
-                                            androidx.compose.material3.Surface(
-                                                shape = RoundedCornerShape(24.dp),
-                                                tonalElevation = 6.dp,
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                            Column(
+                                                modifier = Modifier.padding(24.dp)
                                             ) {
-                                                Column(
-                                                    modifier = Modifier.padding(24.dp)
+                                                Text(
+                                                    text = "Select Audio Device",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    text = "Choose an audio input device from the list below:",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(weight = 1f, fill = false)
+                                                        .heightIn(max = 300.dp)
                                                 ) {
-                                                    Text(
-                                                        text = "Select Audio Source",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                    )
-                                                    Text(
-                                                        text = "Choose an audio source for the selected device:",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                                                    )
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(weight = 1f, fill = false)
-                                                            .heightIn(max = 300.dp)
+                                                    LazyColumn(
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
                                                     ) {
-                                                        LazyColumn(
-                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                                                            contentPadding = PaddingValues(vertical = 4.dp)
-                                                        ) {
-                                                            if (audio_in_sources.isNotEmpty()) {
-                                                                items(audio_in_sources) { source ->
-                                                                    if (source != null) {
-                                                                        Row(
-                                                                            modifier = Modifier
-                                                                                .fillMaxWidth()
-                                                                                .clip(RoundedCornerShape(12.dp))
-                                                                                .clickable {
-                                                                                    avstatestore.state.audio_in_source_set(source.id)
-                                                                                    expanded_as = false
-                                                                                }
-                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                            verticalAlignment = Alignment.CenterVertically
-                                                                        ) {
-                                                                            Column(modifier = Modifier.weight(1f)) {
-                                                                                Text(
-                                                                                    text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")",
-                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                                    maxLines = 1,
-                                                                                    overflow = TextOverflow.Ellipsis,
-                                                                                    fontWeight = FontWeight.SemiBold
-                                                                                )
+                                                        if (audio_in_devices.isNotEmpty()) {
+                                                            items(audio_in_devices) { device ->
+                                                                if (device != null) {
+                                                                    Row(
+                                                                        modifier = Modifier
+                                                                            .fillMaxWidth()
+                                                                            .clip(RoundedCornerShape(12.dp))
+                                                                            .clickable {
+                                                                                avstatestore.state.audio_in_source_set("")
+                                                                                audio_in_sources.clear()
+                                                                                avstatestore.state.audio_in_device_set(device)
+                                                                                expanded_a = false
                                                                             }
+                                                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                        verticalAlignment = Alignment.CenterVertically
+                                                                    ) {
+                                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                            Text(
+                                                                                text = device,
+                                                                                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                maxLines = 1,
+                                                                                overflow = TextOverflow.Ellipsis,
+                                                                                fontWeight = FontWeight.SemiBold
+                                                                            )
                                                                         }
                                                                     }
                                                                 }
                                                             }
-                                                            item {
-                                                                Row(
-                                                                    modifier = Modifier
-                                                                        .fillMaxWidth()
-                                                                        .clip(RoundedCornerShape(12.dp))
-                                                                        .clickable {
-                                                                            avstatestore.state.audio_in_source_set("")
-                                                                            expanded_as = false
-                                                                        }
-                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-                                                                    Column(modifier = Modifier.weight(1f)) {
-                                                                        Text(
-                                                                            text = "-none-",
-                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis,
-                                                                            fontWeight = FontWeight.SemiBold
-                                                                        )
+                                                        }
+                                                        item {
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(12.dp))
+                                                                    .clickable {
+                                                                        avstatestore.state.audio_in_source_set("")
+                                                                        audio_in_sources.clear()
+                                                                        avstatestore.state.audio_in_device_set("")
+                                                                        expanded_a = false
                                                                     }
+                                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = "-none-",
+                                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        fontWeight = FontWeight.SemiBold
+                                                                    )
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                    Spacer(modifier = Modifier.height(20.dp))
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.End
+                                                }
+                                                Spacer(modifier = Modifier.height(20.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
+                                                    androidx.compose.material3.TextButton(
+                                                        onClick = { expanded_a = false }
                                                     ) {
-                                                        androidx.compose.material3.TextButton(
-                                                            onClick = { expanded_as = false }
-                                                        ) {
-                                                            Text(
-                                                                text = "Cancel",
-                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                                                                fontWeight = FontWeight.SemiBold
-                                                            )
-                                                        }
+                                                        Text(
+                                                            text = "Cancel",
+                                                            style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
                                                     }
                                                 }
                                             }
@@ -1260,333 +1158,505 @@ fun App()
                                     }
                                 }
 
-                                Text("video capture: " + avstatestore.state.video_in_device_get() + " " + avstatestore.state.video_in_source_get(), fontSize = 12.sp, modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 1)
-                                Box {
-                                    IconButton(onClick = {
+                                // 2. Audio Source
+                                ModernSelectorRow(
+                                    icon = Icons.Filled.MusicNote,
+                                    title = "Audio Source",
+                                    value = avstatestore.state.audio_in_source_get()
+                                ) {
+                                    if ((avstatestore.state.audio_in_device_get() != null) && (avstatestore.state.audio_in_device_get() != ""))
+                                    {
                                         avstatestore.state.ffmpeg_init_do()
-                                        val video_in_devices_get = AVActivity.ffmpegav_get_video_in_devices()
-                                        println("ffmpeg video in devices: " + video_in_devices_get.size)
-                                        video_in_devices.clear()
-                                        video_in_devices.addAll(video_in_devices_get)
-                                        expanded_v = true
-                                    },
-                                        modifier = Modifier.size(AV_SELECTOR_ICON_SIZE)) {
-                                        Icon(Icons.Filled.Refresh, null)
-                                    }
-                                    if (expanded_v) {
-                                        androidx.compose.material3.AlertDialog(
-                                            onDismissRequest = { expanded_v = false },
-                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                                            modifier = Modifier
-                                                .padding(24.dp)
-                                                .wrapContentHeight()
-                                                .widthIn(max = 360.dp),
-                                        ) {
-                                            androidx.compose.material3.Surface(
-                                                shape = RoundedCornerShape(24.dp),
-                                                tonalElevation = 6.dp,
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
-                                            ) {
-                                                Column(
-                                                    modifier = Modifier.padding(24.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Select Video Device",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                    )
-                                                    Text(
-                                                        text = "Choose a video input device from the list below:",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                                                    )
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(weight = 1f, fill = false)
-                                                            .heightIn(max = 300.dp)
-                                                    ) {
-                                                        LazyColumn(
-                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                                                            contentPadding = PaddingValues(vertical = 4.dp)
-                                                        ) {
-                                                            if (video_in_devices.isNotEmpty()) {
-                                                                items(video_in_devices) { device ->
-                                                                    if (device != null) {
-                                                                        Row(
-                                                                            modifier = Modifier
-                                                                                .fillMaxWidth()
-                                                                                .clip(RoundedCornerShape(12.dp))
-                                                                                .clickable {
-                                                                                    avstatestore.state.video_in_source_set("")
-                                                                                    video_in_sources.clear()
-                                                                                    avstatestore.state.video_in_device_set(device)
-                                                                                    expanded_v = false
-                                                                                }
-                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                            verticalAlignment = Alignment.CenterVertically
-                                                                        ) {
-                                                                            Column(modifier = Modifier.weight(1f)) {
-                                                                                Text(
-                                                                                    text = device,
-                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                                    maxLines = 1,
-                                                                                    overflow = TextOverflow.Ellipsis,
-                                                                                    fontWeight = FontWeight.SemiBold
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                            item {
-                                                                Row(
-                                                                    modifier = Modifier
-                                                                        .fillMaxWidth()
-                                                                        .clip(RoundedCornerShape(12.dp))
-                                                                        .clickable {
-                                                                            avstatestore.state.video_in_source_set("")
-                                                                            video_in_sources.clear()
-                                                                            avstatestore.state.video_in_device_set("")
-                                                                            expanded_v = false
-                                                                        }
-                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-                                                                    Column(modifier = Modifier.weight(1f)) {
-                                                                        Text(
-                                                                            text = "-none-",
-                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis,
-                                                                            fontWeight = FontWeight.SemiBold
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    Spacer(modifier = Modifier.height(20.dp))
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.End
-                                                    ) {
-                                                        androidx.compose.material3.TextButton(
-                                                            onClick = { expanded_v = false }
-                                                        ) {
-                                                            Text(
-                                                                text = "Cancel",
-                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                                                                fontWeight = FontWeight.SemiBold
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                Box {
-                                    IconButton(onClick = {
-                                        if ((avstatestore.state.video_in_device_get() != null) && (avstatestore.state.video_in_device_get() != ""))
+                                        var audio_in_sources_get: Array<AVActivity.ffmpegav_descrid> = emptyArray()
+                                        val tmp = AVActivity.ffmpegav_get_in_sources(avstatestore.state.audio_in_device_get(), 0)
+                                        if (tmp == null)
                                         {
-                                            avstatestore.state.ffmpeg_init_do()
-                                            var video_in_sources_get: Array<AVActivity.ffmpegav_descrid> = emptyArray()
-                                            if (avstatestore.state.video_in_device_get() == "video4linux2,v4l2")
-                                            {
-                                                val tmp = AVActivity.ffmpegav_get_in_sources("v4l2", 1)
-                                                if (tmp == null)
-                                                {
-                                                    video_in_sources_get = emptyArray()
-                                                } else
-                                                {
-                                                    val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
-                                                    tmp.iterator().forEach() {
-                                                        if ((it != null) && (it.id != null))
-                                                        {
-                                                            tmp2.add(it)
-                                                        }
-                                                    }
-                                                    video_in_sources_get = tmp2.toTypedArray()
-                                                }
-                                            } else
-                                            {
-                                                val tmp = AVActivity.ffmpegav_get_in_sources(avstatestore.state.video_in_device_get(), 1)
-                                                if (tmp == null)
-                                                {
-                                                    video_in_sources_get = emptyArray()
-                                                } else
-                                                {
-                                                    val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
-                                                    tmp.iterator().forEach() {
-                                                        if ((it != null) && (it.id != null))
-                                                        {
-                                                            tmp2.add(it)
-                                                        }
-                                                    }
-                                                    video_in_sources_get = tmp2.toTypedArray()
-                                                }
-                                            }
-                                            Log.i(TAG, "video_in_device=" + avstatestore.state.video_in_device_get())
-                                            if (avstatestore.state.video_in_device_get() == "x11grab")
+                                            if (avstatestore.state.audio_in_device_get() == JAVA_AUDIO_IN_DEVICE_NAME)
                                             {
                                                 val tmp0 = AVActivity.ffmpegav_descrid()
-                                                tmp0.id = ":0.0"
-                                                video_in_sources_get += listOf(tmp0)
-                                                val tmp1 = AVActivity.ffmpegav_descrid()
-                                                tmp1.id = ":1.0"
-                                                video_in_sources_get += listOf(tmp1)
-                                                val tmp2 = AVActivity.ffmpegav_descrid()
-                                                tmp2.id = ":2.0"
-                                                video_in_sources_get += listOf(tmp2)
-                                                val tmp3 = AVActivity.ffmpegav_descrid()
-                                                tmp3.id = ":3.0"
-                                                video_in_sources_get += listOf(tmp3)
-                                                val tmp4 = AVActivity.ffmpegav_descrid()
-                                                tmp4.id = ":4.0"
-                                                video_in_sources_get += listOf(tmp4)
-                                                val tmp5 = AVActivity.ffmpegav_descrid()
-                                                tmp5.id = ":5.0"
-                                                video_in_sources_get += listOf(tmp5)
-                                            }
-                                            video_in_sources.clear()
-                                            if (video_in_sources_get.isNotEmpty())
+                                                tmp0.id = "default"
+                                                val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
+                                                tmp2.add(tmp0)
+                                                audio_in_sources_get = tmp2.toTypedArray()
+                                            } else
                                             {
-                                                println("ffmpeg video in sources: " + video_in_sources_get.size)
-                                                video_in_sources.addAll(video_in_sources_get)
-                                                expanded_vs = true
+                                                audio_in_sources_get = emptyArray()
                                             }
+                                        } else if (avstatestore.state.audio_in_device_get() == JAVA_AUDIO_IN_DEVICE_NAME)
+                                        {
+                                            val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
+                                            tmp.iterator().forEach() {
+                                                if ((it != null) && (it.id != null))
+                                                {
+                                                    tmp2.add(it)
+                                                }
+                                            }
+                                            val tmp0 = AVActivity.ffmpegav_descrid()
+                                            tmp0.id = "default"
+                                            tmp2.add(tmp0)
+                                            audio_in_sources_get = tmp2.toTypedArray()
+                                        } else
+                                        {
+                                            val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
+                                            tmp.iterator().forEach() {
+                                                if ((it != null) && (it.id != null))
+                                                {
+                                                    tmp2.add(it)
+                                                }
+                                            }
+                                            audio_in_sources_get = tmp2.toTypedArray()
                                         }
-                                    },
-                                        modifier = Modifier.size(AV_SELECTOR_ICON_SIZE)) {
-                                        Icon(Icons.Filled.Refresh, null)
+                                        // if (avstatestore.state.audio_in_device_get() == "dshow")
+                                        //{
+                                        //    audio_in_sources_get += listOf("audio=" + MainActivity.DB_PREF__windows_audio_in_source + "")
+                                        //}
+                                        audio_in_sources.clear()
+                                        if (audio_in_sources_get.isNotEmpty())
+                                        {
+                                            println("ffmpeg audio in sources: " + audio_in_sources_get.size)
+                                            audio_in_sources.addAll(audio_in_sources_get)
+                                            expanded_as = true
+                                        }
                                     }
-                                    if (expanded_vs) {
-                                        androidx.compose.material3.AlertDialog(
-                                            onDismissRequest = { expanded_vs = false },
-                                            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-                                            modifier = Modifier
-                                                .padding(24.dp)
-                                                .wrapContentHeight()
-                                                .widthIn(max = 360.dp),
+                                }
+                                if (expanded_as) {
+                                    androidx.compose.material3.AlertDialog(
+                                        onDismissRequest = { expanded_as = false },
+                                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                        modifier = Modifier
+                                            .padding(24.dp)
+                                            .wrapContentHeight()
+                                            .widthIn(max = 360.dp),
+                                    ) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(24.dp),
+                                            tonalElevation = 6.dp,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
                                         ) {
-                                            androidx.compose.material3.Surface(
-                                                shape = RoundedCornerShape(24.dp),
-                                                tonalElevation = 6.dp,
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                            Column(
+                                                modifier = Modifier.padding(24.dp)
                                             ) {
-                                                Column(
-                                                    modifier = Modifier.padding(24.dp)
+                                                Text(
+                                                    text = "Select Audio Source",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    text = "Choose an audio source for the selected device:",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(weight = 1f, fill = false)
+                                                        .heightIn(max = 300.dp)
                                                 ) {
-                                                    Text(
-                                                        text = "Select Video Source",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                    )
-                                                    Text(
-                                                        text = "Choose a video source for the selected device:",
-                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                                                    )
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .weight(weight = 1f, fill = false)
-                                                            .heightIn(max = 300.dp)
+                                                    LazyColumn(
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
                                                     ) {
-                                                        LazyColumn(
-                                                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                                                            contentPadding = PaddingValues(vertical = 4.dp)
-                                                        ) {
-                                                            if (video_in_sources.isNotEmpty()) {
-                                                                items(video_in_sources) { source ->
-                                                                    if (source != null) {
-                                                                        Row(
-                                                                            modifier = Modifier
-                                                                                .fillMaxWidth()
-                                                                                .clip(RoundedCornerShape(12.dp))
-                                                                                .clickable {
-                                                                                    avstatestore.state.video_in_source_set(source.id)
-                                                                                    expanded_vs = false
-                                                                                }
-                                                                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                            verticalAlignment = Alignment.CenterVertically
-                                                                        ) {
-                                                                            Column(modifier = Modifier.weight(1f)) {
-                                                                                Text(
-                                                                                    text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")",
-                                                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                                    maxLines = 1,
-                                                                                    overflow = TextOverflow.Ellipsis,
-                                                                                    fontWeight = FontWeight.SemiBold
-                                                                                )
+                                                        if (audio_in_sources.isNotEmpty()) {
+                                                            items(audio_in_sources) { source ->
+                                                                if (source != null) {
+                                                                    Row(
+                                                                        modifier = Modifier
+                                                                            .fillMaxWidth()
+                                                                            .clip(RoundedCornerShape(12.dp))
+                                                                            .clickable {
+                                                                                avstatestore.state.audio_in_source_set(source.id)
+                                                                                expanded_as = false
                                                                             }
+                                                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                        verticalAlignment = Alignment.CenterVertically
+                                                                    ) {
+                                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                            Text(
+                                                                                text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")",
+                                                                                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                maxLines = 1,
+                                                                                overflow = TextOverflow.Ellipsis,
+                                                                                fontWeight = FontWeight.SemiBold
+                                                                            )
                                                                         }
                                                                     }
                                                                 }
                                                             }
-                                                            item {
-                                                                Row(
-                                                                    modifier = Modifier
-                                                                        .fillMaxWidth()
-                                                                        .clip(RoundedCornerShape(12.dp))
-                                                                        .clickable {
-                                                                            avstatestore.state.video_in_source_set("")
-                                                                            expanded_vs = false
-                                                                        }
-                                                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                                                    verticalAlignment = Alignment.CenterVertically
-                                                                ) {
-                                                                    Column(modifier = Modifier.weight(1f)) {
-                                                                        Text(
-                                                                            text = "-none-",
-                                                                            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                                                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis,
-                                                                            fontWeight = FontWeight.SemiBold
-                                                                        )
+                                                        }
+                                                        item {
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(12.dp))
+                                                                    .clickable {
+                                                                        avstatestore.state.audio_in_source_set("")
+                                                                        expanded_as = false
                                                                     }
+                                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = "-none-",
+                                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        fontWeight = FontWeight.SemiBold
+                                                                    )
                                                                 }
                                                             }
                                                         }
                                                     }
-                                                    Spacer(modifier = Modifier.height(20.dp))
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.End
+                                                }
+                                                Spacer(modifier = Modifier.height(20.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
+                                                    androidx.compose.material3.TextButton(
+                                                        onClick = { expanded_as = false }
                                                     ) {
-                                                        androidx.compose.material3.TextButton(
-                                                            onClick = { expanded_vs = false }
-                                                        ) {
-                                                            Text(
-                                                                text = "Cancel",
-                                                                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                                                                fontWeight = FontWeight.SemiBold
-                                                            )
-                                                        }
+                                                        Text(
+                                                            text = "Cancel",
+                                                            style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                var resolution_expanded by remember { mutableStateOf(false) }
-                                Text("video resolution: " + avstatestore.state.video_in_resolution_get(), fontSize = 13.sp, modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 1)
-                                IconButton(onClick = {
-                                    resolution_expanded = true
-                                },
-                                    modifier = Modifier.size(AV_SELECTOR_ICON_SIZE)) {
-                                    Icon(Icons.Filled.Refresh, null)
+
+                                // 3. Video Device
+                                ModernSelectorRow(
+                                    icon = Icons.Filled.Videocam,
+                                    title = "Video Device",
+                                    value = avstatestore.state.video_in_device_get()
+                                ) {
+                                    avstatestore.state.ffmpeg_init_do()
+                                    val video_in_devices_get = AVActivity.ffmpegav_get_video_in_devices()
+                                    println("ffmpeg video in devices: " + video_in_devices_get.size)
+                                    video_in_devices.clear()
+                                    video_in_devices.addAll(video_in_devices_get)
+                                    expanded_v = true
                                 }
-                                val items = listOf("480x270", "640x360", "640x480", "480x640", "960x540", "720x720", "1024x768", "1280x720", "720x1280", "1080x1080", "1920x1080", "1080x1920")
+                                if (expanded_v) {
+                                    androidx.compose.material3.AlertDialog(
+                                        onDismissRequest = { expanded_v = false },
+                                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                        modifier = Modifier
+                                            .padding(24.dp)
+                                            .wrapContentHeight()
+                                            .widthIn(max = 360.dp),
+                                    ) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(24.dp),
+                                            tonalElevation = 6.dp,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(24.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Select Video Device",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    text = "Choose a video input device from the list below:",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(weight = 1f, fill = false)
+                                                        .heightIn(max = 300.dp)
+                                                ) {
+                                                    LazyColumn(
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
+                                                    ) {
+                                                        if (video_in_devices.isNotEmpty()) {
+                                                            items(video_in_devices) { device ->
+                                                                if (device != null) {
+                                                                    Row(
+                                                                        modifier = Modifier
+                                                                            .fillMaxWidth()
+                                                                            .clip(RoundedCornerShape(12.dp))
+                                                                            .clickable {
+                                                                                avstatestore.state.video_in_source_set("")
+                                                                                video_in_sources.clear()
+                                                                                avstatestore.state.video_in_device_set(device)
+                                                                                expanded_v = false
+                                                                            }
+                                                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                        verticalAlignment = Alignment.CenterVertically
+                                                                    ) {
+                                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                            Text(
+                                                                                text = device,
+                                                                                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                maxLines = 1,
+                                                                                overflow = TextOverflow.Ellipsis,
+                                                                                fontWeight = FontWeight.SemiBold
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        item {
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(12.dp))
+                                                                    .clickable {
+                                                                        avstatestore.state.video_in_source_set("")
+                                                                        video_in_sources.clear()
+                                                                        avstatestore.state.video_in_device_set("")
+                                                                        expanded_v = false
+                                                                    }
+                                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = "-none-",
+                                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        fontWeight = FontWeight.SemiBold
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(20.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
+                                                    androidx.compose.material3.TextButton(
+                                                        onClick = { expanded_v = false }
+                                                    ) {
+                                                        Text(
+                                                            text = "Cancel",
+                                                            style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 4. Video Source
+                                ModernSelectorRow(
+                                    icon = Icons.Filled.Camera,
+                                    title = "Video Source",
+                                    value = avstatestore.state.video_in_source_get()
+                                ) {
+                                    if ((avstatestore.state.video_in_device_get() != null) && (avstatestore.state.video_in_device_get() != ""))
+                                    {
+                                        avstatestore.state.ffmpeg_init_do()
+                                        var video_in_sources_get: Array<AVActivity.ffmpegav_descrid> = emptyArray()
+                                        if (avstatestore.state.video_in_device_get() == "video4linux2,v4l2")
+                                        {
+                                            val tmp = AVActivity.ffmpegav_get_in_sources("v4l2", 1)
+                                            if (tmp == null)
+                                            {
+                                                video_in_sources_get = emptyArray()
+                                            } else
+                                            {
+                                                val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
+                                                tmp.iterator().forEach() {
+                                                    if ((it != null) && (it.id != null))
+                                                    {
+                                                        tmp2.add(it)
+                                                    }
+                                                }
+                                                video_in_sources_get = tmp2.toTypedArray()
+                                            }
+                                        } else
+                                        {
+                                            val tmp = AVActivity.ffmpegav_get_in_sources(avstatestore.state.video_in_device_get(), 1)
+                                            if (tmp == null)
+                                            {
+                                                video_in_sources_get = emptyArray()
+                                            } else
+                                            {
+                                                val tmp2 = ArrayList<AVActivity.ffmpegav_descrid>()
+                                                tmp.iterator().forEach() {
+                                                    if ((it != null) && (it.id != null))
+                                                    {
+                                                        tmp2.add(it)
+                                                    }
+                                                }
+                                                video_in_sources_get = tmp2.toTypedArray()
+                                            }
+                                        }
+                                        Log.i(TAG, "video_in_device=" + avstatestore.state.video_in_device_get())
+                                        if (avstatestore.state.video_in_device_get() == "x11grab")
+                                        {
+                                            val tmp0 = AVActivity.ffmpegav_descrid()
+                                            tmp0.id = ":0.0"
+                                            video_in_sources_get += listOf(tmp0)
+                                            val tmp1 = AVActivity.ffmpegav_descrid()
+                                            tmp1.id = ":1.0"
+                                            video_in_sources_get += listOf(tmp1)
+                                            val tmp2 = AVActivity.ffmpegav_descrid()
+                                            tmp2.id = ":2.0"
+                                            video_in_sources_get += listOf(tmp2)
+                                            val tmp3 = AVActivity.ffmpegav_descrid()
+                                            tmp3.id = ":3.0"
+                                            video_in_sources_get += listOf(tmp3)
+                                            val tmp4 = AVActivity.ffmpegav_descrid()
+                                            tmp4.id = ":4.0"
+                                            video_in_sources_get += listOf(tmp4)
+                                            val tmp5 = AVActivity.ffmpegav_descrid()
+                                            tmp5.id = ":5.0"
+                                            video_in_sources_get += listOf(tmp5)
+                                        }
+                                        video_in_sources.clear()
+                                        if (video_in_sources_get.isNotEmpty())
+                                        {
+                                            println("ffmpeg video in sources: " + video_in_sources_get.size)
+                                            video_in_sources.addAll(video_in_sources_get)
+                                            expanded_vs = true
+                                        }
+                                    }
+                                }
+                                if (expanded_vs) {
+                                    androidx.compose.material3.AlertDialog(
+                                        onDismissRequest = { expanded_vs = false },
+                                        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                                        modifier = Modifier
+                                            .padding(24.dp)
+                                            .wrapContentHeight()
+                                            .widthIn(max = 360.dp),
+                                    ) {
+                                        androidx.compose.material3.Surface(
+                                            shape = RoundedCornerShape(24.dp),
+                                            tonalElevation = 6.dp,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(24.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Select Video Source",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                )
+                                                Text(
+                                                    text = "Choose a video source for the selected device:",
+                                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(weight = 1f, fill = false)
+                                                        .heightIn(max = 300.dp)
+                                                ) {
+                                                    LazyColumn(
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                                                        contentPadding = PaddingValues(vertical = 4.dp)
+                                                    ) {
+                                                        if (video_in_sources.isNotEmpty()) {
+                                                            items(video_in_sources) { source ->
+                                                                if (source != null) {
+                                                                    Row(
+                                                                        modifier = Modifier
+                                                                            .fillMaxWidth()
+                                                                            .clip(RoundedCornerShape(12.dp))
+                                                                            .clickable {
+                                                                                avstatestore.state.video_in_source_set(source.id)
+                                                                                expanded_vs = false
+                                                                            }
+                                                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                        verticalAlignment = Alignment.CenterVertically
+                                                                    ) {
+                                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                            Text(
+                                                                                text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")",
+                                                                                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                                maxLines = 1,
+                                                                                overflow = TextOverflow.Ellipsis,
+                                                                                fontWeight = FontWeight.SemiBold
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        item {
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .clip(RoundedCornerShape(12.dp))
+                                                                    .clickable {
+                                                                        avstatestore.state.video_in_source_set("")
+                                                                        expanded_vs = false
+                                                                    }
+                                                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(
+                                                                        text = "-none-",
+                                                                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                                                        maxLines = 1,
+                                                                        overflow = TextOverflow.Ellipsis,
+                                                                        fontWeight = FontWeight.SemiBold
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(20.dp))
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.End
+                                                ) {
+                                                    androidx.compose.material3.TextButton(
+                                                        onClick = { expanded_vs = false }
+                                                    ) {
+                                                        Text(
+                                                            text = "Cancel",
+                                                            style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                                                            fontWeight = FontWeight.SemiBold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 5. Video Resolution
+                                var resolution_expanded by remember { mutableStateOf(false) }
+                                ModernSelectorRow(
+                                    icon = Icons.Filled.AspectRatio,
+                                    title = "Video Resolution",
+                                    value = avstatestore.state.video_in_resolution_get()
+                                ) {
+                                    resolution_expanded = true
+                                }
                                 if (resolution_expanded) {
                                     androidx.compose.material3.AlertDialog(
                                         onDismissRequest = { resolution_expanded = false },
@@ -1625,6 +1695,7 @@ fun App()
                                                         verticalArrangement = Arrangement.spacedBy(4.dp),
                                                         contentPadding = PaddingValues(vertical = 4.dp)
                                                     ) {
+                                                        val items = listOf("480x270", "640x360", "640x480", "480x640", "960x540", "720x720", "1024x768", "1280x720", "720x1280", "1080x1080", "1920x1080", "1080x1920")
                                                         items(items) { res ->
                                                             Row(
                                                                 modifier = Modifier
@@ -1678,6 +1749,8 @@ fun App()
                                         }
                                     }
                                 }
+
+                                // 6. Capture FPS
                                 var capture_fps_expanded by remember { mutableStateOf(false) }
                                 val fps_int = avstatestore.state.video_capture_fps_get()
                                 var fps_info_str = "" + fps_int
@@ -1685,15 +1758,13 @@ fun App()
                                 {
                                     fps_info_str = "Default"
                                 }
-                                Text("capture fps: " + fps_info_str, fontSize = 13.sp, modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 1)
-                                IconButton(onClick = {
+                                ModernSelectorRow(
+                                    icon = Icons.Filled.Timer,
+                                    title = "Capture FPS",
+                                    value = fps_info_str
+                                ) {
                                     capture_fps_expanded = true
-                                },
-                                    modifier = Modifier.size(AV_SELECTOR_ICON_SIZE)) {
-                                    Icon(Icons.Filled.Refresh, null)
                                 }
-                                val items_capture_fps = listOf(-1, 5, 10, 15, 20, 24, 25, 30, 60)
                                 if (capture_fps_expanded) {
                                     androidx.compose.material3.AlertDialog(
                                         onDismissRequest = { capture_fps_expanded = false },
@@ -1732,6 +1803,7 @@ fun App()
                                                         verticalArrangement = Arrangement.spacedBy(4.dp),
                                                         contentPadding = PaddingValues(vertical = 4.dp)
                                                     ) {
+                                                        val items_capture_fps = listOf(-1, 5, 10, 15, 20, 24, 25, 30, 60)
                                                         items(items_capture_fps) { fps ->
                                                             Row(
                                                                 modifier = Modifier
