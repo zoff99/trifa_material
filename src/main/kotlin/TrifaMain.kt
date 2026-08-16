@@ -1037,13 +1037,13 @@ fun App()
                             }
 
                             Column(modifier = Modifier.randomDebugBorder()) {
-                                // 2-Column Grid Layout to cut overall height in half
+                                // 2-Column Grid Layout
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
                                     // LEFT COLUMN
                                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                                        // 1. Audio Device
+                                        // 1. Audio Device (Top Left)
                                         CompactSelectorRow(icon = Icons.Filled.Mic, title = "Audio Device", value = avstatestore.state.audio_in_device_get()) {
                                             avstatestore.state.ffmpeg_init_do()
                                             val audio_in_devices_get = AVActivity.ffmpegav_get_audio_in_devices_wrapper()
@@ -1053,7 +1053,26 @@ fun App()
                                             expanded_a = true
                                         }
 
-                                        // 2. Audio Source
+                                        // 3. Video Device (Middle Left)
+                                        CompactSelectorRow(icon = Icons.Filled.Videocam, title = "Video Device", value = avstatestore.state.video_in_device_get()) {
+                                            avstatestore.state.ffmpeg_init_do()
+                                            val video_in_devices_get = AVActivity.ffmpegav_get_video_in_devices()
+                                            println("ffmpeg video in devices: " + video_in_devices_get.size)
+                                            video_in_devices.clear()
+                                            video_in_devices.addAll(video_in_devices_get)
+                                            expanded_v = true
+                                        }
+
+                                        // 5. Resolution (Bottom Left)
+                                        CompactSelectorRow(icon = Icons.Filled.AspectRatio, title = "Resolution", value = avstatestore.state.video_in_resolution_get()) {
+                                            resolution_expanded = true
+                                        }
+                                    }
+
+                                    // RIGHT COLUMN
+                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                                        // 2. Audio Source (Top Right)
                                         CompactSelectorRow(icon = Icons.Filled.MusicNote, title = "Audio Source", value = avstatestore.state.audio_in_source_get()) {
                                             if ((avstatestore.state.audio_in_device_get() != null) && (avstatestore.state.audio_in_device_get() != "")) {
                                                 avstatestore.state.ffmpeg_init_do()
@@ -1084,21 +1103,7 @@ fun App()
                                             }
                                         }
 
-                                        // 3. Video Device
-                                        CompactSelectorRow(icon = Icons.Filled.Videocam, title = "Video Device", value = avstatestore.state.video_in_device_get()) {
-                                            avstatestore.state.ffmpeg_init_do()
-                                            val video_in_devices_get = AVActivity.ffmpegav_get_video_in_devices()
-                                            println("ffmpeg video in devices: " + video_in_devices_get.size)
-                                            video_in_devices.clear()
-                                            video_in_devices.addAll(video_in_devices_get)
-                                            expanded_v = true
-                                        }
-                                    }
-
-                                    // RIGHT COLUMN
-                                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-
-                                        // 4. Video Source
+                                        // 4. Video Source (Middle Right)
                                         CompactSelectorRow(icon = Icons.Filled.Camera, title = "Video Source", value = avstatestore.state.video_in_source_get()) {
                                             if ((avstatestore.state.video_in_device_get() != null) && (avstatestore.state.video_in_device_get() != "")) {
                                                 avstatestore.state.ffmpeg_init_do()
@@ -1138,12 +1143,7 @@ fun App()
                                             }
                                         }
 
-                                        // 5. Resolution
-                                        CompactSelectorRow(icon = Icons.Filled.AspectRatio, title = "Resolution", value = avstatestore.state.video_in_resolution_get()) {
-                                            resolution_expanded = true
-                                        }
-
-                                        // 6. Capture FPS
+                                        // 6. Capture FPS (Bottom Right)
                                         CompactSelectorRow(icon = Icons.Filled.Timer, title = "Capture FPS", value = fps_info_str) {
                                             capture_fps_expanded = true
                                         }
