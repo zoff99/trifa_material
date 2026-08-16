@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -952,9 +954,12 @@ fun App()
 
 
 
+
+
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
+
                             var expanded_a by remember { mutableStateOf(false) }
                             var expanded_v by remember { mutableStateOf(false) }
                             var expanded_as by remember { mutableStateOf(false) }
@@ -970,6 +975,42 @@ fun App()
                             val fps_int = avstatestore.state.video_capture_fps_get()
                             var fps_info_str = "" + fps_int
                             if (fps_int == -1) { fps_info_str = "Default" }
+
+                            @Composable
+                            fun CustomVerticalScrollbar(
+                                scrollState: androidx.compose.foundation.ScrollState,
+                                modifier: Modifier = Modifier
+                            ) {
+                                val targetAlpha = if (scrollState.isScrollInProgress) 1f else 0f
+                                val alpha by androidx.compose.animation.core.animateFloatAsState(
+                                    targetValue = targetAlpha,
+                                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 300)
+                                )
+
+                                if (scrollState.maxValue > 0) {
+                                    androidx.compose.foundation.layout.BoxWithConstraints(
+                                        modifier = modifier
+                                            .fillMaxHeight()
+                                            .width(6.dp)
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        val totalContent = scrollState.maxValue + scrollState.viewportSize
+                                        if (totalContent > 0 && scrollState.viewportSize > 0) {
+                                            val thumbHeight = (scrollState.viewportSize.toFloat() / totalContent) * maxHeight.value
+                                            val thumbOffset = (scrollState.value.toFloat() / totalContent) * maxHeight.value
+
+                                            androidx.compose.foundation.layout.Box(
+                                                modifier = Modifier
+                                                    .offset(y = thumbOffset.dp)
+                                                    .height(thumbHeight.dp)
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(3.dp))
+                                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f * alpha))
+                                            )
+                                        }
+                                    }
+                                }
+                            }
 
                             @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
                             @Composable
@@ -1161,26 +1202,30 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Audio Device", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose an audio input device from the list below:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Column(
-                                                    modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    if (audio_in_devices.isNotEmpty()) {
-                                                        audio_in_devices.forEach { device ->
-                                                            if (device != null) {
-                                                                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
-                                                                    avstatestore.state.audio_in_source_set(""); audio_in_sources.clear(); avstatestore.state.audio_in_device_set(device); expanded_a = false
-                                                                }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                    Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                val scrollState_a = rememberScrollState()
+                                                Row(modifier = Modifier.heightIn(max = 300.dp).padding(vertical = 4.dp)) {
+                                                    Column(
+                                                        modifier = Modifier.weight(1f).verticalScroll(scrollState_a),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        if (audio_in_devices.isNotEmpty()) {
+                                                            audio_in_devices.forEach { device ->
+                                                                if (device != null) {
+                                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
+                                                                        avstatestore.state.audio_in_source_set(""); audio_in_sources.clear(); avstatestore.state.audio_in_device_set(device); expanded_a = false
+                                                                    }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                    }
                                                                 }
                                                             }
                                                         }
+                                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
+                                                            avstatestore.state.audio_in_source_set(""); audio_in_sources.clear(); avstatestore.state.audio_in_device_set(""); expanded_a = false
+                                                        }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                            Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                        }
                                                     }
-                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
-                                                        avstatestore.state.audio_in_source_set(""); audio_in_sources.clear(); avstatestore.state.audio_in_device_set(""); expanded_a = false
-                                                    }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                        Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
-                                                    }
+                                                    CustomVerticalScrollbar(scrollState = scrollState_a, modifier = Modifier.padding(start = 4.dp))
                                                 }
                                                 Spacer(modifier = Modifier.height(20.dp))
                                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { androidx.compose.material3.TextButton(onClick = { expanded_a = false }) { Text(text = "Cancel", style = androidx.compose.material3.MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) } }
@@ -1199,22 +1244,26 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Audio Source", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose an audio source for the selected device:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Column(
-                                                    modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    if (audio_in_sources.isNotEmpty()) {
-                                                        audio_in_sources.forEach { source ->
-                                                            if (source != null) {
-                                                                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.audio_in_source_set(source.id); expanded_as = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                    Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                val scrollState_as = rememberScrollState()
+                                                Row(modifier = Modifier.heightIn(max = 300.dp).padding(vertical = 4.dp)) {
+                                                    Column(
+                                                        modifier = Modifier.weight(1f).verticalScroll(scrollState_as),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        if (audio_in_sources.isNotEmpty()) {
+                                                            audio_in_sources.forEach { source ->
+                                                                if (source != null) {
+                                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.audio_in_source_set(source.id); expanded_as = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                    }
                                                                 }
                                                             }
                                                         }
+                                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.audio_in_source_set(""); expanded_as = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                            Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                        }
                                                     }
-                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.audio_in_source_set(""); expanded_as = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                        Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
-                                                    }
+                                                    CustomVerticalScrollbar(scrollState = scrollState_as, modifier = Modifier.padding(start = 4.dp))
                                                 }
                                                 Spacer(modifier = Modifier.height(20.dp))
                                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { androidx.compose.material3.TextButton(onClick = { expanded_as = false }) { Text(text = "Cancel", style = androidx.compose.material3.MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) } }
@@ -1233,22 +1282,26 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Video Device", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose a video input device from the list below:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Column(
-                                                    modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    if (video_in_devices.isNotEmpty()) {
-                                                        video_in_devices.forEach { device ->
-                                                            if (device != null) {
-                                                                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); video_in_sources.clear(); avstatestore.state.video_in_device_set(device); expanded_v = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                    Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                val scrollState_v = rememberScrollState()
+                                                Row(modifier = Modifier.heightIn(max = 300.dp).padding(vertical = 4.dp)) {
+                                                    Column(
+                                                        modifier = Modifier.weight(1f).verticalScroll(scrollState_v),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        if (video_in_devices.isNotEmpty()) {
+                                                            video_in_devices.forEach { device ->
+                                                                if (device != null) {
+                                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); video_in_sources.clear(); avstatestore.state.video_in_device_set(device); expanded_v = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = device, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                    }
                                                                 }
                                                             }
                                                         }
+                                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); video_in_sources.clear(); avstatestore.state.video_in_device_set(""); expanded_v = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                            Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                        }
                                                     }
-                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); video_in_sources.clear(); avstatestore.state.video_in_device_set(""); expanded_v = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                        Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
-                                                    }
+                                                    CustomVerticalScrollbar(scrollState = scrollState_v, modifier = Modifier.padding(start = 4.dp))
                                                 }
                                                 Spacer(modifier = Modifier.height(20.dp))
                                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { androidx.compose.material3.TextButton(onClick = { expanded_v = false }) { Text(text = "Cancel", style = androidx.compose.material3.MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) } }
@@ -1267,22 +1320,26 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Video Source", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose a video source for the selected device:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Column(
-                                                    modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    if (video_in_sources.isNotEmpty()) {
-                                                        video_in_sources.forEach { source ->
-                                                            if (source != null) {
-                                                                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(source.id); expanded_vs = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                                    Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                val scrollState_vs = rememberScrollState()
+                                                Row(modifier = Modifier.heightIn(max = 300.dp).padding(vertical = 4.dp)) {
+                                                    Column(
+                                                        modifier = Modifier.weight(1f).verticalScroll(scrollState_vs),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        if (video_in_sources.isNotEmpty()) {
+                                                            video_in_sources.forEach { source ->
+                                                                if (source != null) {
+                                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(source.id); expanded_vs = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                        Column(modifier = Modifier.weight(1f)) { Text(text = if (source.description.isEmpty()) source.id else source.description + " (" + source.id + ")", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                                    }
                                                                 }
                                                             }
                                                         }
+                                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); expanded_vs = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                            Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                        }
                                                     }
-                                                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { avstatestore.state.video_in_source_set(""); expanded_vs = false }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                        Column(modifier = Modifier.weight(1f)) { Text(text = "-none-", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
-                                                    }
+                                                    CustomVerticalScrollbar(scrollState = scrollState_vs, modifier = Modifier.padding(start = 4.dp))
                                                 }
                                                 Spacer(modifier = Modifier.height(20.dp))
                                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { androidx.compose.material3.TextButton(onClick = { expanded_vs = false }) { Text(text = "Cancel", style = androidx.compose.material3.MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) } }
@@ -1302,19 +1359,23 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Resolution", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose the video capture resolution:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Column(
-                                                    modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    items.forEach { res ->
-                                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
-                                                            if (avstatestore.state.calling_state_get() != AVState.CALL_STATUS.CALL_STATUS_CALLING) { avstatestore.state.video_in_resolution_set(res) }
-                                                            else { SnackBarToast("Resolution change is only allowed when no call is active") }
-                                                            resolution_expanded = false
-                                                        }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                            Column(modifier = Modifier.weight(1f)) { Text(text = res, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                val scrollState_res = rememberScrollState()
+                                                Row(modifier = Modifier.heightIn(max = 300.dp).padding(vertical = 4.dp)) {
+                                                    Column(
+                                                        modifier = Modifier.weight(1f).verticalScroll(scrollState_res),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        items.forEach { res ->
+                                                            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
+                                                                if (avstatestore.state.calling_state_get() != AVState.CALL_STATUS.CALL_STATUS_CALLING) { avstatestore.state.video_in_resolution_set(res) }
+                                                                else { SnackBarToast("Resolution change is only allowed when no call is active") }
+                                                                resolution_expanded = false
+                                                            }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                Column(modifier = Modifier.weight(1f)) { Text(text = res, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                            }
                                                         }
                                                     }
+                                                    CustomVerticalScrollbar(scrollState = scrollState_res, modifier = Modifier.padding(start = 4.dp))
                                                 }
                                                 Spacer(modifier = Modifier.height(20.dp))
                                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { androidx.compose.material3.TextButton(onClick = { resolution_expanded = false }) { Text(text = "Cancel", style = androidx.compose.material3.MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) } }
@@ -1334,18 +1395,22 @@ fun App()
                                             Column(modifier = Modifier.padding(24.dp)) {
                                                 Text(text = "Select Capture FPS", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
                                                 Text(text = "Choose the video capture frame rate:", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-                                                Column(
-                                                    modifier = Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    items_capture_fps.forEach { fps ->
-                                                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
-                                                            try { avstatestore.state.video_capture_fps_set(fps) } catch (_: Exception) {}
-                                                            capture_fps_expanded = false
-                                                        }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                            Column(modifier = Modifier.weight(1f)) { Text(text = if (fps == -1) "Default" else "" + fps, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                val scrollState_fps = rememberScrollState()
+                                                Row(modifier = Modifier.heightIn(max = 300.dp).padding(vertical = 4.dp)) {
+                                                    Column(
+                                                        modifier = Modifier.weight(1f).verticalScroll(scrollState_fps),
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        items_capture_fps.forEach { fps ->
+                                                            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable {
+                                                                try { avstatestore.state.video_capture_fps_set(fps) } catch (_: Exception) {}
+                                                                capture_fps_expanded = false
+                                                            }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                Column(modifier = Modifier.weight(1f)) { Text(text = if (fps == -1) "Default" else "" + fps, style = androidx.compose.material3.MaterialTheme.typography.bodyLarge, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) }
+                                                            }
                                                         }
                                                     }
+                                                    CustomVerticalScrollbar(scrollState = scrollState_fps, modifier = Modifier.padding(start = 4.dp))
                                                 }
                                                 Spacer(modifier = Modifier.height(20.dp))
                                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { androidx.compose.material3.TextButton(onClick = { capture_fps_expanded = false }) { Text(text = "Cancel", style = androidx.compose.material3.MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) } }
