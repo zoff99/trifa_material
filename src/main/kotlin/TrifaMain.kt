@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,6 +119,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -989,8 +991,16 @@ fun App()
                                     ) {
                                         val totalContent = scrollState.maxValue + scrollState.viewportSize
                                         if (totalContent > 0 && scrollState.viewportSize > 0) {
-                                            val thumbHeight = (scrollState.viewportSize.toFloat() / totalContent) * maxHeight.value
-                                            val thumbOffset = (scrollState.value.toFloat() / totalContent) * maxHeight.value
+                                            val density = androidx.compose.ui.platform.LocalDensity.current
+                                            val trackHeightPx = with(density) { maxHeight.toPx() }
+                                            val thumbHeightPx = (scrollState.viewportSize.toFloat() / totalContent) * trackHeightPx
+                                            val thumbOffsetPx = (scrollState.value.toFloat() / totalContent) * trackHeightPx
+
+                                            val thumbHeight = thumbHeightPx / density.density
+                                            val thumbOffset = thumbOffsetPx / density.density
+
+                                            val draggableDistance = trackHeightPx - thumbHeightPx
+                                            val scrollRatio = if (draggableDistance > 0) scrollState.maxValue.toFloat() / draggableDistance else 0f
 
                                             androidx.compose.foundation.layout.Box(
                                                 modifier = Modifier
@@ -999,6 +1009,15 @@ fun App()
                                                     .fillMaxWidth()
                                                     .clip(RoundedCornerShape(3.dp))
                                                     .background(androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                                    .pointerInput(scrollState.maxValue, trackHeightPx, scrollRatio) {
+                                                        detectDragGestures { change, dragAmount ->
+                                                            change.consume()
+                                                            if (scrollRatio > 0f) {
+                                                                val scrollDelta = dragAmount.y * scrollRatio
+                                                                scrollState.dispatchRawDelta(scrollDelta)
+                                                            }
+                                                        }
+                                                    }
                                             )
                                         }
                                     }
@@ -1415,7 +1434,6 @@ fun App()
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
                             // =========== audio and video selectors ===========
-
 
                         }
                         Column(modifier = Modifier.randomDebugBorder().padding(4.dp)) {
