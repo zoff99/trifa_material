@@ -72,7 +72,7 @@ jobs:
       - name: app_startup
         shell: bash
         run: |
-          ./gradlew.bat run > runlog.txt 2>&1 &
+          ./gradlew.bat run
 
       - name: app_click_for_start
         shell: pwsh
