@@ -2,7 +2,6 @@
 
 import ChatColorsConfig.NGC_FOUNDER_MESSAGE_COLOR
 import ChatColorsConfig.NGC_MODERATOR_MESSAGE_COLOR
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -307,7 +306,10 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
                         modifier = Modifier.matchParentSize(),
                         contentAlignment = messageActionBarAlignment(isMyMessage)
                     ) {
-                        AnimatedVisibility(
+                        // HINT: fully qualified on purpose. Inside the surrounding Column a
+                        // ColumnScope.AnimatedVisibility extension would win overload resolution
+                        // and cannot be called with the implicit receiver of this Box scope.
+                        androidx.compose.animation.AnimatedVisibility(
                             visible = isHovered && !isForceHidden,
                             enter = fadeIn() + scaleIn(initialScale = 0.9f),
                             exit = fadeOut() + scaleOut(targetScale = 0.9f),
