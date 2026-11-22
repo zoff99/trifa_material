@@ -3,9 +3,9 @@ all: run
 compile:
 	@echo ">> Compiling JNI Stubs..."
 	@mkdir -p com/zoffcc/applications/trifa
-	javac com/zoffcc/applications/trifa/*.java
+	javac -encoding UTF-8 com/zoffcc/applications/trifa/*.java
 	@echo ">> Compiling Unit Test files..."
-	javac -cp "." JniToxcoreUnitTest.java Test*.java
+	javac -encoding UTF-8 -cp "." JniToxcoreUnitTest.java Test*.java
 
 run: compile
 	@echo ">> Running Unit Tests..."
