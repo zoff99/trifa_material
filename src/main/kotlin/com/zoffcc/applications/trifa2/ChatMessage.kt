@@ -184,150 +184,114 @@ inline fun ChatMessage(isMyMessage: Boolean,
                 var start_top = 5.dp
                 var start_end = 10.dp
                 var start_bottom = 5.dp
-                // HINT: wrapper only anchors the floating action bar to the bubble.
-                // No clip/background here, so the bar can overflow and keep its shadow.
-                Box {
-                    Box(
-                        Modifier.clip(
-                            RoundedCornerShape(
-                                10.dp,
-                                10.dp,
-                                if (!isMyMessage) 10.dp else 0.dp,
-                                if (!isMyMessage) 0.dp else 10.dp
-                            )
+                Box(
+                    Modifier.clip(
+                        RoundedCornerShape(
+                            10.dp,
+                            10.dp,
+                            if (!isMyMessage) 10.dp else 0.dp,
+                            if (!isMyMessage) 0.dp else 10.dp
                         )
-                            .background(color = if (!isMyMessage) ChatColorsConfig.OTHERS_MESSAGE else ChatColorsConfig.MY_MESSAGE)
-                            .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
-                    ) {
-                        // -------- Message Content Box --------
-                        // -------- Message Content Box --------
-                        // -------- Message Content Box --------
-                        Column(Modifier.padding(all = 0.dp),
-                            verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                            if(!isMyMessage) {
-                                Row(verticalAlignment = Alignment.Bottom) {
-                                    Text(
-                                        fontFamily = DefaultFont,
-                                        text = message.user.name,
-                                        style = MaterialTheme.typography.body1.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            lineHeight = TextUnit.Unspecified,
-                                            letterSpacing = 0.sp,
-                                            fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
-                                        ),
-                                        color = message.user.color
-                                    )
-                                }
-                            }
-
-                            var show_link_click by remember { mutableStateOf(false) }
-                            var link_str by remember { mutableStateOf("") }
-
-                            val isTransferring = message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value &&
-                                    ((message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && is_filetransfer_in_progress(message)) ||
-                                            (message.direction != TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && message.filename_fullpath != null && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_PAUSE.value && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL.value))
-
-                            if (!image_save_ui_space && !isTransferring)
-                            {
-                                message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
-                                    show_link_click = show_link_click_
-                                    link_str = link_str_
-                                }
-                                show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-                                    show_link_click = show_link_click_
-                                    link_str = link_str_
-                                }
-                            }
-                            // ---------------- Filetransfer ----------------
-                            // ---------------- Filetransfer ----------------
-                            if (message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
-                            {
-                                if (message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value)
-                                {
-                                    incoming_filetransfer(message, ui_scale)
-                                }
-                                else
-                                {
-                                    outgoing_filetransfer(message, ui_scale)
-                                }
-                            }
-                            // ---------------- Filetransfer ----------------
-                            // ---------------- Filetransfer ----------------
-                            Row(
-                                horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
-                                modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
-                                    .align(if (isMyMessage) Alignment.End else Alignment.Start),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isTransferring && !image_save_ui_space) {
-                                    Box(modifier = Modifier.padding(end = 4.dp)) {
-                                        message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
-                                            show_link_click = show_link_click_
-                                            link_str = link_str_
-                                        }
-                                        show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-                                            show_link_click = show_link_click_
-                                            link_str = link_str_
-                                        }
-                                    }
-                                }
-
-                                var msg_version_int: Int = 1
-                                if (message.msg_version == 1) {
-                                    msg_version_int = 2
-                                } else {
-                                    if (message.msg_idv3_hash.isNullOrEmpty()) {
-                                        msg_version_int = 1
-                                    } else {
-                                        msg_version_int = 3
-                                    }
-                                }
-
-                                if (isMyMessage) {
-                                    message_checkmarks(isMyMessage, message, msg_version_int)
-                                    message_timestamp_and_info(message, msg_version_int)
-                                } else {
-                                    message_timestamp_and_info(message, msg_version_int)
-                                    message_checkmarks(isMyMessage, message, msg_version_int)
-                                }
+                    )
+                        .background(color = if (!isMyMessage) ChatColorsConfig.OTHERS_MESSAGE else ChatColorsConfig.MY_MESSAGE)
+                        .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
+                ) {
+                    // -------- Message Content Box --------
+                    // -------- Message Content Box --------
+                    // -------- Message Content Box --------
+                    Column(Modifier.padding(all = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                        if(!isMyMessage) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    fontFamily = DefaultFont,
+                                    text = message.user.name,
+                                    style = MaterialTheme.typography.body1.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        lineHeight = TextUnit.Unspecified,
+                                        letterSpacing = 0.sp,
+                                        fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
+                                    ),
+                                    color = message.user.color
+                                )
                             }
                         }
-                        // -------- Message Content Box --------
-                        // -------- Message Content Box --------
-                        // -------- Message Content Box --------
-                    }
-                    // HINT: floating hover action bar, bottom corner opposite the timestamp.
-                    // matchParentSize() -> measured against the bubble, but does NOT contribute
-                    // to the bubble size, so message layout is unchanged.
-                    // It sits in this outer (unclipped) Box so the bar keeps its shadow and is
-                    // not cut off by the bubble rounded corners.
-                    Box(
-                        modifier = Modifier.matchParentSize(),
-                        contentAlignment = messageActionBarAlignment(isMyMessage)
-                    ) {
-                        // HINT: fully qualified on purpose. Inside the surrounding Column a
-                        // ColumnScope.AnimatedVisibility extension would win overload resolution
-                        // and cannot be called with the implicit receiver of this Box scope.
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = isHovered && !isForceHidden,
-                            enter = fadeIn() + scaleIn(initialScale = 0.9f),
-                            exit = fadeOut() + scaleOut(targetScale = 0.9f),
-                            modifier = Modifier.padding(
-                                horizontal = MESSAGE_ACTION_BAR_INSET_HORIZONTAL,
-                                vertical = MESSAGE_ACTION_BAR_INSET_VERTICAL
-                            )
+
+                        var show_link_click by remember { mutableStateOf(false) }
+                        var link_str by remember { mutableStateOf("") }
+
+                        val isTransferring = message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value &&
+                                ((message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && is_filetransfer_in_progress(message)) ||
+                                        (message.direction != TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && message.filename_fullpath != null && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_PAUSE.value && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL.value))
+
+                        if (!image_save_ui_space && !isTransferring)
+                        {
+                            message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
+                                show_link_click = show_link_click_
+                                link_str = link_str_
+                            }
+                            show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
+                                show_link_click = show_link_click_
+                                link_str = link_str_
+                            }
+                        }
+                        // ---------------- Filetransfer ----------------
+                        // ---------------- Filetransfer ----------------
+                        if (message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
+                        {
+                            if (message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value)
+                            {
+                                incoming_filetransfer(message, ui_scale)
+                            }
+                            else
+                            {
+                                outgoing_filetransfer(message, ui_scale)
+                            }
+                        }
+                        // ---------------- Filetransfer ----------------
+                        // ---------------- Filetransfer ----------------
+                        Row(
+                            horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
+                            modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
+                                .align(if (isMyMessage) Alignment.End else Alignment.Start),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            MessageActionBar(
-                                ui_scale = ui_scale,
-                                isMyMessage = isMyMessage,
-                                onEmojiSelected = { emoji -> onEmojiSelected(message, emoji) },
-                                onCopySelected = { clipboardManager.setText(AnnotatedString(message.text)) },
-                                onReplySelected = { onReplySelected(message) },
-                                onDeleteSelected = { showDeleteDialog = true },
-                                onDismiss = { isForceHidden = true }
-                            )
+                            if (isTransferring && !image_save_ui_space) {
+                                Box(modifier = Modifier.padding(end = 4.dp)) {
+                                    message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
+                                        show_link_click = show_link_click_
+                                        link_str = link_str_
+                                    }
+                                    show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
+                                        show_link_click = show_link_click_
+                                        link_str = link_str_
+                                    }
+                                }
+                            }
+
+                            var msg_version_int: Int = 1
+                            if (message.msg_version == 1) {
+                                msg_version_int = 2
+                            } else {
+                                if (message.msg_idv3_hash.isNullOrEmpty()) {
+                                    msg_version_int = 1
+                                } else {
+                                    msg_version_int = 3
+                                }
+                            }
+
+                            if (isMyMessage) {
+                                message_checkmarks(isMyMessage, message, msg_version_int)
+                                message_timestamp_and_info(message, msg_version_int)
+                            } else {
+                                message_timestamp_and_info(message, msg_version_int)
+                                message_checkmarks(isMyMessage, message, msg_version_int)
+                            }
                         }
                     }
+                    // -------- Message Content Box --------
+                    // -------- Message Content Box --------
+                    // -------- Message Content Box --------
                 }
                 Box(Modifier.size(MESSAGE_BOX_BOTTOM_PADDING))
             }
@@ -336,6 +300,38 @@ inline fun ChatMessage(isMyMessage: Boolean,
                     Triangle(false, -1, ChatColorsConfig.MY_MESSAGE, MESSAGE_BOX_BOTTOM_PADDING)
                 }
             }
+        }
+
+        // HINT: floating hover action bar.
+        // It is a child of the full-width message row Box, NOT of the message bubble,
+        // so it is never clipped by a short bubble and always sits near the edge of the
+        // message list view: left edge for own messages, right edge for incoming ones
+        // (the opposite side of the bubble itself).
+        // Vertically it is bottom aligned, i.e. level with the bottom of the bubble.
+        // HINT: fully qualified on purpose. Inside a Column/Row scope the
+        // ColumnScope.AnimatedVisibility extension would win overload resolution and
+        // cannot be called with the implicit receiver of this Box scope.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isHovered && !isForceHidden,
+            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+            exit = fadeOut() + scaleOut(targetScale = 0.9f),
+            modifier = Modifier
+                .align(messageActionBarAlignment(isMyMessage))
+                .padding(
+                    start = MESSAGE_ACTION_BAR_EDGE_PADDING,
+                    end = MESSAGE_ACTION_BAR_EDGE_PADDING,
+                    bottom = MESSAGE_BOX_BOTTOM_PADDING + MESSAGE_ACTION_BAR_INSET_VERTICAL
+                )
+        ) {
+            MessageActionBar(
+                ui_scale = ui_scale,
+                isMyMessage = isMyMessage,
+                onEmojiSelected = { emoji -> onEmojiSelected(message, emoji) },
+                onCopySelected = { clipboardManager.setText(AnnotatedString(message.text)) },
+                onReplySelected = { onReplySelected(message) },
+                onDeleteSelected = { showDeleteDialog = true },
+                onDismiss = { isForceHidden = true }
+            )
         }
 
     }

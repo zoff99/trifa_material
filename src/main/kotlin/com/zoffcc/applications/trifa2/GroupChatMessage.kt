@@ -169,69 +169,25 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
                 var start_top = 5.dp
                 var start_end = 10.dp
                 var start_bottom = 5.dp
-                // HINT: wrapper only anchors the floating action bar to the bubble.
-                // No clip/background here, so the bar can overflow and keep its shadow.
-                Box {
-                    Box(
-                        FounderBorder(groupmessage).clip(
-                            RoundedCornerShape(
-                                10.dp,
-                                10.dp,
-                                if (!isMyMessage) 10.dp else 0.dp,
-                                if (!isMyMessage) 0.dp else 10.dp
-                            )
+                Box(
+                    FounderBorder(groupmessage).clip(
+                        RoundedCornerShape(
+                            10.dp,
+                            10.dp,
+                            if (!isMyMessage) 10.dp else 0.dp,
+                            if (!isMyMessage) 0.dp else 10.dp
                         )
-                            .background(color = if (!isMyMessage) col_msg_other else ChatColorsConfig.MY_MESSAGE)
-                            .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
-                    ) {
-                        // -------- GroupMessage Content Box --------
-                        // -------- GroupMessage Content Box --------
-                        // -------- GroupMessage Content Box --------
-                        Column(Modifier.randomDebugBorder().padding(all = 0.dp),
-                            verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                            if(!isMyMessage) {
-                                Row(verticalAlignment = Alignment.Bottom) {
-                                    if (groupmessage.is_private_msg == 1)
-                                    {
-                                        Column() {
-                                            Tooltip(text = "private Message") {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(12.dp)
-                                                        .border(1.dp, Color.Black, CircleShape)
-                                                        .background(Color(NGC_PRIVATE_MSG_INDICATOR_COLOR),
-                                                            CircleShape)
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.height(3.dp))
-                                        }
-                                        Spacer(modifier = Modifier.width(5.dp))
-                                    }
-                                    // println("NNN:" + groupmessage.user.name + "CCC:" +groupmessage.user.color.luminance())
-                                    Text(
-                                        text = groupmessage.user.name,
-                                        modifier = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
-                                            Modifier.background(Color(NGC_PEER_SHADOW_COLOR), RoundedCornerShape(30)).padding(3.dp)
-                                        else
-                                            Modifier,
-                                        fontFamily = DefaultFont,
-                                        style = MaterialTheme.typography.body1.copy(
-                                            //shadow = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
-                                            //    Shadow(Color.Black, offset = Offset.Zero, blurRadius = 2.1f)
-                                            //else
-                                            //    Shadow() ,
-                                            fontWeight = FontWeight.SemiBold,
-                                            lineHeight = TextUnit.Unspecified,
-                                            letterSpacing = 0.sp,
-                                            fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
-                                        ),
-                                        color = groupmessage.user.color
-                                    )
-                                }
-                            }
-                            else
-                            {
-                                // HINT: own private messages also get marked with an "orange circle" icon
+                    )
+                        .background(color = if (!isMyMessage) col_msg_other else ChatColorsConfig.MY_MESSAGE)
+                        .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
+                ) {
+                    // -------- GroupMessage Content Box --------
+                    // -------- GroupMessage Content Box --------
+                    // -------- GroupMessage Content Box --------
+                    Column(Modifier.randomDebugBorder().padding(all = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                        if(!isMyMessage) {
+                            Row(verticalAlignment = Alignment.Bottom) {
                                 if (groupmessage.is_private_msg == 1)
                                 {
                                     Column() {
@@ -248,86 +204,94 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
                                     }
                                     Spacer(modifier = Modifier.width(5.dp))
                                 }
+                                // println("NNN:" + groupmessage.user.name + "CCC:" +groupmessage.user.color.luminance())
+                                Text(
+                                    text = groupmessage.user.name,
+                                    modifier = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
+                                        Modifier.background(Color(NGC_PEER_SHADOW_COLOR), RoundedCornerShape(30)).padding(3.dp)
+                                    else
+                                        Modifier,
+                                    fontFamily = DefaultFont,
+                                    style = MaterialTheme.typography.body1.copy(
+                                        //shadow = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
+                                        //    Shadow(Color.Black, offset = Offset.Zero, blurRadius = 2.1f)
+                                        //else
+                                        //    Shadow() ,
+                                        fontWeight = FontWeight.SemiBold,
+                                        lineHeight = TextUnit.Unspecified,
+                                        letterSpacing = 0.sp,
+                                        fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
+                                    ),
+                                    color = groupmessage.user.color
+                                )
                             }
-                            var show_link_click by remember { mutableStateOf(false) }
-                            var link_str by remember { mutableStateOf("") }
-                            if (!image_save_ui_space)
-                            {
-                                group_message_text_block(groupmessage, ui_scale) { show_link_click_, link_str_ ->
-                                    show_link_click = show_link_click_
-                                    link_str = link_str_
-                                }
-                                group_show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-                                    show_link_click = show_link_click_
-                                    link_str = link_str_
-                                }
-                            }
-
-                            // ---------------- Filetransfer ----------------
-                            // ---------------- Filetransfer ----------------
-                            if (groupmessage.trifaMsgType == TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
-                            {
-                                if (!isMyMessage)
-                                {
-                                    group_incoming_filetransfer(groupmessage, ui_scale)
-                                }
-                                else
-                                {
-                                    group_outgoing_filetransfer(groupmessage, ui_scale)
-                                }
-                            }
-                            // ---------------- Filetransfer ----------------
-                            // ---------------- Filetransfer ----------------
-
-                            Row(
-                                horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
-                                modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
-                                    .align(if (isMyMessage) Alignment.End else Alignment.Start)
-                            ) {
-                                if (isMyMessage) {
-                                    message_checkmarks(groupmessage, isMyMessage)
-                                    message_timestamp_and_info(groupmessage, isMyMessage)
-                                } else {
-                                    message_timestamp_and_info(groupmessage, isMyMessage)
-                                    message_checkmarks(groupmessage, isMyMessage)
-                                }
-                            }
-                            // -------- GroupMessage Content Box --------
-                            // -------- GroupMessage Content Box --------
-                            // -------- GroupMessage Content Box --------
                         }
-                    }
-                    // HINT: floating hover action bar, bottom corner opposite the timestamp.
-                    // matchParentSize() -> measured against the bubble, but does NOT contribute
-                    // to the bubble size, so message layout is unchanged.
-                    // It sits in this outer (unclipped) Box so the bar keeps its shadow and is
-                    // not cut off by the bubble rounded corners.
-                    Box(
-                        modifier = Modifier.matchParentSize(),
-                        contentAlignment = messageActionBarAlignment(isMyMessage)
-                    ) {
-                        // HINT: fully qualified on purpose. Inside the surrounding Column a
-                        // ColumnScope.AnimatedVisibility extension would win overload resolution
-                        // and cannot be called with the implicit receiver of this Box scope.
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = isHovered && !isForceHidden,
-                            enter = fadeIn() + scaleIn(initialScale = 0.9f),
-                            exit = fadeOut() + scaleOut(targetScale = 0.9f),
-                            modifier = Modifier.padding(
-                                horizontal = MESSAGE_ACTION_BAR_INSET_HORIZONTAL,
-                                vertical = MESSAGE_ACTION_BAR_INSET_VERTICAL
-                            )
+                        else
+                        {
+                            // HINT: own private messages also get marked with an "orange circle" icon
+                            if (groupmessage.is_private_msg == 1)
+                            {
+                                Column() {
+                                    Tooltip(text = "private Message") {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(12.dp)
+                                                .border(1.dp, Color.Black, CircleShape)
+                                                .background(Color(NGC_PRIVATE_MSG_INDICATOR_COLOR),
+                                                    CircleShape)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                }
+                                Spacer(modifier = Modifier.width(5.dp))
+                            }
+                        }
+                        var show_link_click by remember { mutableStateOf(false) }
+                        var link_str by remember { mutableStateOf("") }
+                        if (!image_save_ui_space)
+                        {
+                            group_message_text_block(groupmessage, ui_scale) { show_link_click_, link_str_ ->
+                                show_link_click = show_link_click_
+                                link_str = link_str_
+                            }
+                            group_show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
+                                show_link_click = show_link_click_
+                                link_str = link_str_
+                            }
+                        }
+
+                        // ---------------- Filetransfer ----------------
+                        // ---------------- Filetransfer ----------------
+                        if (groupmessage.trifaMsgType == TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
+                        {
+                            if (!isMyMessage)
+                            {
+                                group_incoming_filetransfer(groupmessage, ui_scale)
+                            }
+                            else
+                            {
+                                group_outgoing_filetransfer(groupmessage, ui_scale)
+                            }
+                        }
+                        // ---------------- Filetransfer ----------------
+                        // ---------------- Filetransfer ----------------
+
+                        Row(
+                            horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
+                            modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
+                                .align(if (isMyMessage) Alignment.End else Alignment.Start)
                         ) {
-                            MessageActionBar(
-                                ui_scale = ui_scale,
-                                isMyMessage = isMyMessage,
-                                onEmojiSelected = { emoji -> onEmojiSelected(groupmessage, emoji) },
-                                onCopySelected = { clipboardManager.setText(AnnotatedString(groupmessage.text)) },
-                                onReplySelected = { onReplySelected(groupmessage) },
-                                onDeleteSelected = { showDeleteDialog = true },
-                                onDismiss = { isForceHidden = true }
-                            )
+                            if (isMyMessage) {
+                                message_checkmarks(groupmessage, isMyMessage)
+                                message_timestamp_and_info(groupmessage, isMyMessage)
+                            } else {
+                                message_timestamp_and_info(groupmessage, isMyMessage)
+                                message_checkmarks(groupmessage, isMyMessage)
+                            }
                         }
+                        // -------- GroupMessage Content Box --------
+                        // -------- GroupMessage Content Box --------
+                        // -------- GroupMessage Content Box --------
                     }
                 }
                 Box(Modifier.size(MESSAGE_BOX_BOTTOM_PADDING))
@@ -342,6 +306,38 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
                     Triangle(false, groupmessage.peer_role, border_color, MESSAGE_BOX_BOTTOM_PADDING)
                 }
             }
+        }
+
+        // HINT: floating hover action bar.
+        // It is a child of the full-width message row Box, NOT of the message bubble,
+        // so it is never clipped by a short bubble and always sits near the edge of the
+        // message list view: left edge for own messages, right edge for incoming ones
+        // (the opposite side of the bubble itself).
+        // Vertically it is bottom aligned, i.e. level with the bottom of the bubble.
+        // HINT: fully qualified on purpose. Inside a Column/Row scope the
+        // ColumnScope.AnimatedVisibility extension would win overload resolution and
+        // cannot be called with the implicit receiver of this Box scope.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isHovered && !isForceHidden,
+            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+            exit = fadeOut() + scaleOut(targetScale = 0.9f),
+            modifier = Modifier
+                .align(messageActionBarAlignment(isMyMessage))
+                .padding(
+                    start = MESSAGE_ACTION_BAR_EDGE_PADDING,
+                    end = MESSAGE_ACTION_BAR_EDGE_PADDING,
+                    bottom = MESSAGE_BOX_BOTTOM_PADDING + MESSAGE_ACTION_BAR_INSET_VERTICAL
+                )
+        ) {
+            MessageActionBar(
+                ui_scale = ui_scale,
+                isMyMessage = isMyMessage,
+                onEmojiSelected = { emoji -> onEmojiSelected(groupmessage, emoji) },
+                onCopySelected = { clipboardManager.setText(AnnotatedString(groupmessage.text)) },
+                onReplySelected = { onReplySelected(groupmessage) },
+                onDeleteSelected = { showDeleteDialog = true },
+                onDismiss = { isForceHidden = true }
+            )
         }
 
 

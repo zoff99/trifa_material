@@ -62,15 +62,25 @@ private const val ACTION_SEPARATOR_HEIGHT = 12f
 private val BAR_PADDING_VERTICAL = 1.dp
 private val BAR_PADDING_HORIZONTAL = 4.dp
 
-/** Inset of the bar inside the bubble, so it does not touch the rounded corners. */
-val MESSAGE_ACTION_BAR_INSET_HORIZONTAL = 6.dp
+/**
+ * Distance of the bar from the edge of the message list view.
+ *
+ * HINT: the bar lives OUTSIDE the message bubble, in the full-width message row.
+ * Anchoring it to the bubble itself was wrong: a short bubble is narrower than the
+ * bar, so the bar got horizontally clipped and lost items.
+ */
+val MESSAGE_ACTION_BAR_EDGE_PADDING = 16.dp
+
+/** Small vertical inset so the bar does not sit flush on the bottom of the row. */
 val MESSAGE_ACTION_BAR_INSET_VERTICAL = 2.dp
 
 /**
- * Alignment of the bar inside the message bubble.
+ * Alignment of the bar inside the full-width message row.
  *
- * The timestamp row is aligned End for own messages and Start for incoming messages,
- * so the bar takes the opposite horizontal side, and always the bottom.
+ * Own messages have their bubble on the right, so the bar goes to the LEFT edge of the
+ * message list view; incoming messages have their bubble on the left, so the bar goes to
+ * the RIGHT edge. Vertically it is always bottom aligned, level with the bottom of the
+ * bubble, and it never overlaps the message text.
  */
 fun messageActionBarAlignment(isMyMessage: Boolean): Alignment =
     if (isMyMessage) Alignment.BottomStart else Alignment.BottomEnd
