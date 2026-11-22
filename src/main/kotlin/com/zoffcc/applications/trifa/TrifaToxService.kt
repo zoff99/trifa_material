@@ -207,7 +207,7 @@ class TrifaToxService
                 var tox_iteration_interval_ms = tox_iteration_interval()
                 Log.i(TAG, "tox_iteration_interval_ms=$tox_iteration_interval_ms")
                 tox_iterate()
-                global_self_connection_status == tox_self_get_connection_status()
+                global_self_connection_status = tox_self_get_connection_status()
 
                 val current_health_init: Int = tox_self_get_network_health()
                 val health_text_init: String = ToxVars.TOX_NETWORK_HEALTH.value_str(current_health_init).replace("TOX_NETWORK_HEALTH_", "")
