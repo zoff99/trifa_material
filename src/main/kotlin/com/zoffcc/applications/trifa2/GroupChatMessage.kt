@@ -7,15 +7,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.PointerMatcher
-import androidx.compose.foundation.TooltipArea
-import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +36,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.BrokenImage
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
@@ -63,21 +56,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -138,6 +127,14 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
     var showDeleteDialog by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
 
+        // HINT: right-click on the floating action bar hides it until the next hover
+        var isForceHidden by remember { mutableStateOf(false) }
+        LaunchedEffect(isHovered) {
+            if (!isHovered) {
+                isForceHidden = false
+            }
+        }
+
     Box(
         modifier = modifier.fillMaxWidth()
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -173,25 +170,69 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
                 var start_top = 5.dp
                 var start_end = 10.dp
                 var start_bottom = 5.dp
-                Box(
-                    FounderBorder(groupmessage).clip(
-                        RoundedCornerShape(
-                            10.dp,
-                            10.dp,
-                            if (!isMyMessage) 10.dp else 0.dp,
-                            if (!isMyMessage) 0.dp else 10.dp
+                // HINT: wrapper only anchors the floating action bar to the bubble.
+                // No clip/background here, so the bar can overflow and keep its shadow.
+                Box {
+                    Box(
+                        FounderBorder(groupmessage).clip(
+                            RoundedCornerShape(
+                                10.dp,
+                                10.dp,
+                                if (!isMyMessage) 10.dp else 0.dp,
+                                if (!isMyMessage) 0.dp else 10.dp
+                            )
                         )
-                    )
-                        .background(color = if (!isMyMessage) col_msg_other else ChatColorsConfig.MY_MESSAGE)
-                        .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
-                ) {
-                    // -------- GroupMessage Content Box --------
-                    // -------- GroupMessage Content Box --------
-                    // -------- GroupMessage Content Box --------
-                    Column(Modifier.randomDebugBorder().padding(all = 0.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        if(!isMyMessage) {
-                            Row(verticalAlignment = Alignment.Bottom) {
+                            .background(color = if (!isMyMessage) col_msg_other else ChatColorsConfig.MY_MESSAGE)
+                            .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
+                    ) {
+                        // -------- GroupMessage Content Box --------
+                        // -------- GroupMessage Content Box --------
+                        // -------- GroupMessage Content Box --------
+                        Column(Modifier.randomDebugBorder().padding(all = 0.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                            if(!isMyMessage) {
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    if (groupmessage.is_private_msg == 1)
+                                    {
+                                        Column() {
+                                            Tooltip(text = "private Message") {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(12.dp)
+                                                        .border(1.dp, Color.Black, CircleShape)
+                                                        .background(Color(NGC_PRIVATE_MSG_INDICATOR_COLOR),
+                                                            CircleShape)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                        }
+                                        Spacer(modifier = Modifier.width(5.dp))
+                                    }
+                                    // println("NNN:" + groupmessage.user.name + "CCC:" +groupmessage.user.color.luminance())
+                                    Text(
+                                        text = groupmessage.user.name,
+                                        modifier = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
+                                            Modifier.background(Color(NGC_PEER_SHADOW_COLOR), RoundedCornerShape(30)).padding(3.dp)
+                                        else
+                                            Modifier,
+                                        fontFamily = DefaultFont,
+                                        style = MaterialTheme.typography.body1.copy(
+                                            //shadow = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
+                                            //    Shadow(Color.Black, offset = Offset.Zero, blurRadius = 2.1f)
+                                            //else
+                                            //    Shadow() ,
+                                            fontWeight = FontWeight.SemiBold,
+                                            lineHeight = TextUnit.Unspecified,
+                                            letterSpacing = 0.sp,
+                                            fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
+                                        ),
+                                        color = groupmessage.user.color
+                                    )
+                                }
+                            }
+                            else
+                            {
+                                // HINT: own private messages also get marked with an "orange circle" icon
                                 if (groupmessage.is_private_msg == 1)
                                 {
                                     Column() {
@@ -208,94 +249,83 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
                                     }
                                     Spacer(modifier = Modifier.width(5.dp))
                                 }
-                                // println("NNN:" + groupmessage.user.name + "CCC:" +groupmessage.user.color.luminance())
-                                Text(
-                                    text = groupmessage.user.name,
-                                    modifier = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
-                                        Modifier.background(Color(NGC_PEER_SHADOW_COLOR), RoundedCornerShape(30)).padding(3.dp)
-                                    else
-                                        Modifier,
-                                    fontFamily = DefaultFont,
-                                    style = MaterialTheme.typography.body1.copy(
-                                        //shadow = if (groupmessage.user.color.luminance() > NGC_PEER_LUMINANCE_THRESHOLD_FOR_SHADOW)
-                                        //    Shadow(Color.Black, offset = Offset.Zero, blurRadius = 2.1f)
-                                        //else
-                                        //    Shadow() ,
-                                        fontWeight = FontWeight.SemiBold,
-                                        lineHeight = TextUnit.Unspecified,
-                                        letterSpacing = 0.sp,
-                                        fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
-                                    ),
-                                    color = groupmessage.user.color
-                                )
                             }
-                        }
-                        else
-                        {
-                            // HINT: own private messages also get marked with an "orange circle" icon
-                            if (groupmessage.is_private_msg == 1)
+                            var show_link_click by remember { mutableStateOf(false) }
+                            var link_str by remember { mutableStateOf("") }
+                            if (!image_save_ui_space)
                             {
-                                Column() {
-                                    Tooltip(text = "private Message") {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(12.dp)
-                                                .border(1.dp, Color.Black, CircleShape)
-                                                .background(Color(NGC_PRIVATE_MSG_INDICATOR_COLOR),
-                                                    CircleShape)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(3.dp))
+                                group_message_text_block(groupmessage, ui_scale) { show_link_click_, link_str_ ->
+                                    show_link_click = show_link_click_
+                                    link_str = link_str_
                                 }
-                                Spacer(modifier = Modifier.width(5.dp))
+                                group_show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
+                                    show_link_click = show_link_click_
+                                    link_str = link_str_
+                                }
                             }
-                        }
-                        var show_link_click by remember { mutableStateOf(false) }
-                        var link_str by remember { mutableStateOf("") }
-                        if (!image_save_ui_space)
-                        {
-                            group_message_text_block(groupmessage, ui_scale) { show_link_click_, link_str_ ->
-                                show_link_click = show_link_click_
-                                link_str = link_str_
-                            }
-                            group_show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-                                show_link_click = show_link_click_
-                                link_str = link_str_
-                            }
-                        }
 
-                        // ---------------- Filetransfer ----------------
-                        // ---------------- Filetransfer ----------------
-                        if (groupmessage.trifaMsgType == TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
-                        {
-                            if (!isMyMessage)
+                            // ---------------- Filetransfer ----------------
+                            // ---------------- Filetransfer ----------------
+                            if (groupmessage.trifaMsgType == TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
                             {
-                                group_incoming_filetransfer(groupmessage, ui_scale)
+                                if (!isMyMessage)
+                                {
+                                    group_incoming_filetransfer(groupmessage, ui_scale)
+                                }
+                                else
+                                {
+                                    group_outgoing_filetransfer(groupmessage, ui_scale)
+                                }
                             }
-                            else
-                            {
-                                group_outgoing_filetransfer(groupmessage, ui_scale)
-                            }
-                        }
-                        // ---------------- Filetransfer ----------------
-                        // ---------------- Filetransfer ----------------
+                            // ---------------- Filetransfer ----------------
+                            // ---------------- Filetransfer ----------------
 
-                        Row(
-                            horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
-                            modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
-                                .align(if (isMyMessage) Alignment.End else Alignment.Start)
+                            Row(
+                                horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
+                                modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
+                                    .align(if (isMyMessage) Alignment.End else Alignment.Start)
+                            ) {
+                                if (isMyMessage) {
+                                    message_checkmarks(groupmessage, isMyMessage)
+                                    message_timestamp_and_info(groupmessage, isMyMessage)
+                                } else {
+                                    message_timestamp_and_info(groupmessage, isMyMessage)
+                                    message_checkmarks(groupmessage, isMyMessage)
+                                }
+                            }
+                            // -------- GroupMessage Content Box --------
+                            // -------- GroupMessage Content Box --------
+                            // -------- GroupMessage Content Box --------
+                        }
+                    }
+                    // HINT: floating hover action bar, bottom corner opposite the timestamp.
+                    // matchParentSize() -> measured against the bubble, but does NOT contribute
+                    // to the bubble size, so message layout is unchanged.
+                    // It sits in this outer (unclipped) Box so the bar keeps its shadow and is
+                    // not cut off by the bubble rounded corners.
+                    Box(
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = messageActionBarAlignment(isMyMessage)
+                    ) {
+                        AnimatedVisibility(
+                            visible = isHovered && !isForceHidden,
+                            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+                            exit = fadeOut() + scaleOut(targetScale = 0.9f),
+                            modifier = Modifier.padding(
+                                horizontal = MESSAGE_ACTION_BAR_INSET_HORIZONTAL,
+                                vertical = MESSAGE_ACTION_BAR_INSET_VERTICAL
+                            )
                         ) {
-                            if (isMyMessage) {
-                                message_checkmarks(groupmessage, isMyMessage)
-                                message_timestamp_and_info(groupmessage, isMyMessage)
-                            } else {
-                                message_timestamp_and_info(groupmessage, isMyMessage)
-                                message_checkmarks(groupmessage, isMyMessage)
-                            }
+                            MessageActionBar(
+                                ui_scale = ui_scale,
+                                isMyMessage = isMyMessage,
+                                onEmojiSelected = { emoji -> onEmojiSelected(groupmessage, emoji) },
+                                onCopySelected = { clipboardManager.setText(AnnotatedString(groupmessage.text)) },
+                                onReplySelected = { onReplySelected(groupmessage) },
+                                onDeleteSelected = { showDeleteDialog = true },
+                                onDismiss = { isForceHidden = true }
+                            )
                         }
-                        // -------- GroupMessage Content Box --------
-                        // -------- GroupMessage Content Box --------
-                        // -------- GroupMessage Content Box --------
                     }
                 }
                 Box(Modifier.size(MESSAGE_BOX_BOTTOM_PADDING))
@@ -313,142 +343,6 @@ inline fun GroupChatMessage(isMyMessage: Boolean,
         }
 
 
-        // 1. Define a state variable to track if the button row is forced hidden by a right-click
-        var isForceHidden by remember { mutableStateOf(false) }
-
-        // Reset the hidden state when the hover ends so it can reappear next time
-        LaunchedEffect(isHovered) {
-            if (!isHovered) {
-                isForceHidden = false
-            }
-        }
-
-        // 2. Overlay the Action Bar on Hover
-        AnimatedVisibility(
-            // Visible if hovered AND NOT forced hidden by a right-click
-            visible = isHovered && !isForceHidden,
-            enter = fadeIn() + scaleIn(initialScale = 0.8f),
-            exit = fadeOut() + scaleOut(targetScale = 0.8f),
-            modifier = Modifier
-                .align(if (isMyMessage) Alignment.CenterStart else Alignment.CenterEnd)
-                .padding(horizontal = 16.dp)
-        ) {
-            // Shared container logic for the entire action group
-            Surface(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(16.dp), // Rounded bar shape instead of a circle
-                color = MaterialTheme.colors.surface,
-                border = BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.08f)),
-                modifier = Modifier
-                    .pointerInput(Unit) {
-                        // Right-click anywhere on the bar container hides it
-                        detectTapGestures(
-                            matcher = PointerMatcher.mouse(PointerButton.Secondary),
-                            onTap = { isForceHidden = true }
-                        )
-                    }
-            ) {
-                // Arrange emoji list, reply, and delete horizontally
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                ) {
-
-                    // --- EMOJI REACTIONS SECTION ---
-                    val emojis = listOf("👍", "👎", "❤️")
-                    emojis.forEach { emoji ->
-                        IconButton(
-                            onClick = { onEmojiSelected(groupmessage, emoji) },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Text(
-                                text = emoji,
-                                fontSize = (14 * ui_scale).sp // Balanced scaled font size
-                            )
-                        }
-                    }
-
-                    // Subtle vertical separator line between reactions and actions
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .width(1.dp)
-                            .height((16 * ui_scale).dp)
-                            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.12f))
-                    )
-
-                    // --- COPY ACTION BUTTON ---
-                    TooltipArea(
-                        tooltip = { ActionTooltip(text = "Copy", ui_scale = ui_scale) },
-                        tooltipPlacement = TooltipPlacement.CursorPoint(
-                            alignment = Alignment.BottomCenter,
-                            offset = DpOffset(0.dp, 8.dp)
-                        ),
-                        delayMillis = 400
-                    ) {
-                        IconButton(
-                            onClick = { clipboardManager.setText(AnnotatedString(groupmessage.text)) },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy",
-                                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                                modifier = Modifier.size((14 * ui_scale).dp) // Reduced icon size
-                            )
-                        }
-                    }
-
-                    // --- REPLY ACTION BUTTON ---
-                    TooltipArea(
-                        tooltip = { ActionTooltip(text = "Reply", ui_scale = ui_scale) },
-                        tooltipPlacement = TooltipPlacement.CursorPoint(
-                            alignment = Alignment.BottomCenter,
-                            offset = DpOffset(0.dp, 8.dp)
-                        ),
-                        delayMillis = 400
-                    ) {
-                        IconButton(
-                            onClick = { onReplySelected(groupmessage) },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Reply,
-                                contentDescription = "Reply",
-                                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                                modifier = Modifier
-                                    .size((14 * ui_scale).dp) // Reduced icon size
-                                    .graphicsLayer(
-                                        scaleX = if (isMyMessage) 1f else -1f
-                                    )
-                            )
-                        }
-                    }
-
-                    // --- DELETE ACTION BUTTON ---
-                    TooltipArea(
-                        tooltip = { ActionTooltip(text = "Delete", ui_scale = ui_scale) },
-                        tooltipPlacement = TooltipPlacement.CursorPoint(
-                            alignment = Alignment.BottomCenter,
-                            offset = DpOffset(0.dp, 8.dp)
-                        ),
-                        delayMillis = 400
-                    ) {
-                        IconButton(
-                            onClick = { showDeleteDialog = true },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete, // Ensure Icons.Default.Delete is imported
-                                contentDescription = "Delete",
-                                tint = MaterialTheme.colors.error.copy(alpha = 0.8f), // Red color highlight
-                                modifier = Modifier.size((14 * ui_scale).dp) // Reduced icon size
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 
     if (showDeleteDialog) {

@@ -6,14 +6,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.PointerMatcher
-import androidx.compose.foundation.TooltipArea
-import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,13 +34,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.ArrowCircleUp
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -71,13 +64,10 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -91,7 +81,6 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -154,6 +143,14 @@ inline fun ChatMessage(isMyMessage: Boolean,
     var isHovered by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
+
+        // HINT: right-click on the floating action bar hides it until the next hover
+        var isForceHidden by remember { mutableStateOf(false) }
+        LaunchedEffect(isHovered) {
+            if (!isHovered) {
+                isForceHidden = false
+            }
+        }
     Box(
         modifier = modifier.fillMaxWidth()
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
@@ -188,114 +185,147 @@ inline fun ChatMessage(isMyMessage: Boolean,
                 var start_top = 5.dp
                 var start_end = 10.dp
                 var start_bottom = 5.dp
-                Box(
-                    Modifier.clip(
-                        RoundedCornerShape(
-                            10.dp,
-                            10.dp,
-                            if (!isMyMessage) 10.dp else 0.dp,
-                            if (!isMyMessage) 0.dp else 10.dp
+                // HINT: wrapper only anchors the floating action bar to the bubble.
+                // No clip/background here, so the bar can overflow and keep its shadow.
+                Box {
+                    Box(
+                        Modifier.clip(
+                            RoundedCornerShape(
+                                10.dp,
+                                10.dp,
+                                if (!isMyMessage) 10.dp else 0.dp,
+                                if (!isMyMessage) 0.dp else 10.dp
+                            )
                         )
-                    )
-                        .background(color = if (!isMyMessage) ChatColorsConfig.OTHERS_MESSAGE else ChatColorsConfig.MY_MESSAGE)
-                        .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
-                ) {
-                    // -------- Message Content Box --------
-                    // -------- Message Content Box --------
-                    // -------- Message Content Box --------
-                    Column(Modifier.padding(all = 0.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        if(!isMyMessage) {
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(
-                                    fontFamily = DefaultFont,
-                                    text = message.user.name,
-                                    style = MaterialTheme.typography.body1.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        lineHeight = TextUnit.Unspecified,
-                                        letterSpacing = 0.sp,
-                                        fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
-                                    ),
-                                    color = message.user.color
-                                )
-                            }
-                        }
-
-                        var show_link_click by remember { mutableStateOf(false) }
-                        var link_str by remember { mutableStateOf("") }
-
-                        val isTransferring = message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value &&
-                                ((message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && is_filetransfer_in_progress(message)) ||
-                                        (message.direction != TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && message.filename_fullpath != null && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_PAUSE.value && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL.value))
-
-                        if (!image_save_ui_space && !isTransferring)
-                        {
-                            message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
-                                show_link_click = show_link_click_
-                                link_str = link_str_
-                            }
-                            show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-                                show_link_click = show_link_click_
-                                link_str = link_str_
-                            }
-                        }
-                        // ---------------- Filetransfer ----------------
-                        // ---------------- Filetransfer ----------------
-                        if (message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
-                        {
-                            if (message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value)
-                            {
-                                incoming_filetransfer(message, ui_scale)
-                            }
-                            else
-                            {
-                                outgoing_filetransfer(message, ui_scale)
-                            }
-                        }
-                        // ---------------- Filetransfer ----------------
-                        // ---------------- Filetransfer ----------------
-                        Row(
-                            horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
-                            modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
-                                .align(if (isMyMessage) Alignment.End else Alignment.Start),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (isTransferring && !image_save_ui_space) {
-                                Box(modifier = Modifier.padding(end = 4.dp)) {
-                                    message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
-                                        show_link_click = show_link_click_
-                                        link_str = link_str_
-                                    }
-                                    show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
-                                        show_link_click = show_link_click_
-                                        link_str = link_str_
-                                    }
+                            .background(color = if (!isMyMessage) ChatColorsConfig.OTHERS_MESSAGE else ChatColorsConfig.MY_MESSAGE)
+                            .padding(start = start_padding, top = start_top, end = start_end, bottom = start_bottom),
+                    ) {
+                        // -------- Message Content Box --------
+                        // -------- Message Content Box --------
+                        // -------- Message Content Box --------
+                        Column(Modifier.padding(all = 0.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                            if(!isMyMessage) {
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text(
+                                        fontFamily = DefaultFont,
+                                        text = message.user.name,
+                                        style = MaterialTheme.typography.body1.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            lineHeight = TextUnit.Unspecified,
+                                            letterSpacing = 0.sp,
+                                            fontSize = ((MSG_TEXT_FONT_SIZE_MIXED * ui_scale / 1.285f).toDouble()).sp
+                                        ),
+                                        color = message.user.color
+                                    )
                                 }
                             }
 
-                            var msg_version_int: Int = 1
-                            if (message.msg_version == 1) {
-                                msg_version_int = 2
-                            } else {
-                                if (message.msg_idv3_hash.isNullOrEmpty()) {
-                                    msg_version_int = 1
+                            var show_link_click by remember { mutableStateOf(false) }
+                            var link_str by remember { mutableStateOf("") }
+
+                            val isTransferring = message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value &&
+                                    ((message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && is_filetransfer_in_progress(message)) ||
+                                            (message.direction != TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value && message.filename_fullpath != null && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_PAUSE.value && message.file_state != ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL.value))
+
+                            if (!image_save_ui_space && !isTransferring)
+                            {
+                                message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
+                                    show_link_click = show_link_click_
+                                    link_str = link_str_
+                                }
+                                show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
+                                    show_link_click = show_link_click_
+                                    link_str = link_str_
+                                }
+                            }
+                            // ---------------- Filetransfer ----------------
+                            // ---------------- Filetransfer ----------------
+                            if (message.trifaMsgType == TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value)
+                            {
+                                if (message.direction == TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_RECVD.value)
+                                {
+                                    incoming_filetransfer(message, ui_scale)
+                                }
+                                else
+                                {
+                                    outgoing_filetransfer(message, ui_scale)
+                                }
+                            }
+                            // ---------------- Filetransfer ----------------
+                            // ---------------- Filetransfer ----------------
+                            Row(
+                                horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start,
+                                modifier = Modifier.randomDebugBorder().padding(all = 0.dp)
+                                    .align(if (isMyMessage) Alignment.End else Alignment.Start),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (isTransferring && !image_save_ui_space) {
+                                    Box(modifier = Modifier.padding(end = 4.dp)) {
+                                        message_text_block(message, ui_scale) { show_link_click_, link_str_ ->
+                                            show_link_click = show_link_click_
+                                            link_str = link_str_
+                                        }
+                                        show_open_link_dialog(show_link_click, link_str) { show_link_click_, link_str_ ->
+                                            show_link_click = show_link_click_
+                                            link_str = link_str_
+                                        }
+                                    }
+                                }
+
+                                var msg_version_int: Int = 1
+                                if (message.msg_version == 1) {
+                                    msg_version_int = 2
                                 } else {
-                                    msg_version_int = 3
+                                    if (message.msg_idv3_hash.isNullOrEmpty()) {
+                                        msg_version_int = 1
+                                    } else {
+                                        msg_version_int = 3
+                                    }
+                                }
+
+                                if (isMyMessage) {
+                                    message_checkmarks(isMyMessage, message, msg_version_int)
+                                    message_timestamp_and_info(message, msg_version_int)
+                                } else {
+                                    message_timestamp_and_info(message, msg_version_int)
+                                    message_checkmarks(isMyMessage, message, msg_version_int)
                                 }
                             }
-
-                            if (isMyMessage) {
-                                message_checkmarks(isMyMessage, message, msg_version_int)
-                                message_timestamp_and_info(message, msg_version_int)
-                            } else {
-                                message_timestamp_and_info(message, msg_version_int)
-                                message_checkmarks(isMyMessage, message, msg_version_int)
-                            }
+                        }
+                        // -------- Message Content Box --------
+                        // -------- Message Content Box --------
+                        // -------- Message Content Box --------
+                    }
+                    // HINT: floating hover action bar, bottom corner opposite the timestamp.
+                    // matchParentSize() -> measured against the bubble, but does NOT contribute
+                    // to the bubble size, so message layout is unchanged.
+                    // It sits in this outer (unclipped) Box so the bar keeps its shadow and is
+                    // not cut off by the bubble rounded corners.
+                    Box(
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = messageActionBarAlignment(isMyMessage)
+                    ) {
+                        AnimatedVisibility(
+                            visible = isHovered && !isForceHidden,
+                            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+                            exit = fadeOut() + scaleOut(targetScale = 0.9f),
+                            modifier = Modifier.padding(
+                                horizontal = MESSAGE_ACTION_BAR_INSET_HORIZONTAL,
+                                vertical = MESSAGE_ACTION_BAR_INSET_VERTICAL
+                            )
+                        ) {
+                            MessageActionBar(
+                                ui_scale = ui_scale,
+                                isMyMessage = isMyMessage,
+                                onEmojiSelected = { emoji -> onEmojiSelected(message, emoji) },
+                                onCopySelected = { clipboardManager.setText(AnnotatedString(message.text)) },
+                                onReplySelected = { onReplySelected(message) },
+                                onDeleteSelected = { showDeleteDialog = true },
+                                onDismiss = { isForceHidden = true }
+                            )
                         }
                     }
-                    // -------- Message Content Box --------
-                    // -------- Message Content Box --------
-                    // -------- Message Content Box --------
                 }
                 Box(Modifier.size(MESSAGE_BOX_BOTTOM_PADDING))
             }
@@ -306,142 +336,6 @@ inline fun ChatMessage(isMyMessage: Boolean,
             }
         }
 
-        // 1. Define a state variable to track if the button row is forced hidden by a right-click
-        var isForceHidden by remember { mutableStateOf(false) }
-
-        // Reset the hidden state when the hover ends so it can reappear next time
-        LaunchedEffect(isHovered) {
-            if (!isHovered) {
-                isForceHidden = false
-            }
-        }
-
-        // 2. Overlay the Action Bar on Hover
-        AnimatedVisibility(
-            // Visible if hovered AND NOT forced hidden by a right-click
-            visible = isHovered && !isForceHidden,
-            enter = fadeIn() + scaleIn(initialScale = 0.8f),
-            exit = fadeOut() + scaleOut(targetScale = 0.8f),
-            modifier = Modifier
-                .align(if (isMyMessage) Alignment.CenterStart else Alignment.CenterEnd)
-                .padding(horizontal = 16.dp)
-        ) {
-            // Shared container logic for the entire action group
-            Surface(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(16.dp), // Rounded bar shape instead of a circle
-                color = MaterialTheme.colors.surface,
-                border = BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.08f)),
-                modifier = Modifier
-                    .pointerInput(Unit) {
-                        // Right-click anywhere on the bar container hides it
-                        detectTapGestures(
-                            matcher = PointerMatcher.mouse(PointerButton.Secondary),
-                            onTap = { isForceHidden = true }
-                        )
-                    }
-            ) {
-                // Arrange emoji list, reply, and delete horizontally
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                ) {
-
-                    // --- EMOJI REACTIONS SECTION ---
-                    val emojis = listOf("👍", "👎", "❤️")
-                    emojis.forEach { emoji ->
-                        IconButton(
-                            onClick = { onEmojiSelected(message, emoji) },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Text(
-                                text = emoji,
-                                fontSize = (14 * ui_scale).sp // Balanced scaled font size
-                            )
-                        }
-                    }
-
-                    // Subtle vertical separator line between reactions and actions
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .width(1.dp)
-                            .height((16 * ui_scale).dp)
-                            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.12f))
-                    )
-
-                    // --- COPY ACTION BUTTON ---
-                    TooltipArea(
-                        tooltip = { ActionTooltip(text = "Copy", ui_scale = ui_scale) },
-                        tooltipPlacement = TooltipPlacement.CursorPoint(
-                            alignment = Alignment.BottomCenter,
-                            offset = DpOffset(0.dp, 8.dp)
-                        ),
-                        delayMillis = 400
-                    ) {
-                        IconButton(
-                            onClick = { clipboardManager.setText(AnnotatedString(message.text)) },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy",
-                                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                                modifier = Modifier.size((14 * ui_scale).dp) // Reduced icon size
-                            )
-                        }
-                    }
-
-                    // --- REPLY ACTION BUTTON ---
-                    TooltipArea(
-                        tooltip = { ActionTooltip(text = "Reply", ui_scale = ui_scale) },
-                        tooltipPlacement = TooltipPlacement.CursorPoint(
-                            alignment = Alignment.BottomCenter,
-                            offset = DpOffset(0.dp, 8.dp)
-                        ),
-                        delayMillis = 400
-                    ) {
-                        IconButton(
-                            onClick = { onReplySelected(message) },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Reply,
-                                contentDescription = "Reply",
-                                tint = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                                modifier = Modifier
-                                    .size((14 * ui_scale).dp) // Reduced icon size
-                                    .graphicsLayer(
-                                        scaleX = if (isMyMessage) 1f else -1f
-                                    )
-                            )
-                        }
-                    }
-
-                    // --- DELETE ACTION BUTTON ---
-                    TooltipArea(
-                        tooltip = { ActionTooltip(text = "Delete", ui_scale = ui_scale) },
-                        tooltipPlacement = TooltipPlacement.CursorPoint(
-                            alignment = Alignment.BottomCenter,
-                            offset = DpOffset(0.dp, 8.dp)
-                        ),
-                        delayMillis = 400
-                    ) {
-                        IconButton(
-                            onClick = { showDeleteDialog = true },
-                            modifier = Modifier.size((28 * ui_scale).dp) // Reduced footprint size
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete, // Ensure Icons.Default.Delete is imported
-                                contentDescription = "Delete",
-                                tint = MaterialTheme.colors.error.copy(alpha = 0.8f), // Red color highlight
-                                modifier = Modifier.size((14 * ui_scale).dp) // Reduced icon size
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 
     if (showDeleteDialog) {
