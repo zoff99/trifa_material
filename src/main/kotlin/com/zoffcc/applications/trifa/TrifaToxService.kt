@@ -214,7 +214,7 @@ class TrifaToxService
                 Log.i(TAG, "tox_network_health: " + health_text_init)
 
                 val currenc_gc_health_init: Int = tox_group_get_health()
-                val gc_health_text_init: String = ToxVars.TOX_GROUP_HEALTH.value_str(current_health_init).replace("TOX_GROUP_HEALTH_", "")
+                val gc_health_text_init: String = ToxVars.TOX_GROUP_HEALTH.value_str(currenc_gc_health_init).replace("TOX_GROUP_HEALTH_", "")
                 Log.i(TAG, "tox_gc_health: " + gc_health_text_init)
 
                 try
@@ -320,7 +320,7 @@ class TrifaToxService
                             val current_gc_health: Int = tox_group_get_health()
                             if (current_gc_health != last_gc_health)
                             {
-                                val gc_health_text = ToxVars.TOX_GROUP_HEALTH.value_str(current_health).replace("TOX_GROUP_HEALTH_", "")
+                                val gc_health_text = ToxVars.TOX_GROUP_HEALTH.value_str(current_gc_health).replace("TOX_GROUP_HEALTH_", "")
                                 last_gc_health = current_gc_health
 
                                 Log.i(TAG, "gc_health_text: " + gc_health_text)
