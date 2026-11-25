@@ -236,12 +236,28 @@ class TrifaToxService
                 // ------- MAIN TOX LOOP ---------------------------------------------------------------
                 set_tox_running_state("running")
                 globalstore.setToxRunning(true)
+
+                // HINT: "startup boost" for the first 60 seconds of the main tox loop.
+                // While the boost is active we iterate every 5 ms instead of the normal
+                // interval, so connecting and syncing happen faster right after start.
+                val tox_loop_start_ms = System.currentTimeMillis()
+                val tox_boost_duration_ms = 60 * 1000L  // boost lasts 60 seconds
+                val tox_boost_sleep_ms = 5L             // iterate every 5 ms while boosting
+
                 while (!stop_me)
                 {
                     try
                     {
                         current_tox_sleep_ms = tox_iteration_interval_ms.toInt()
-                        if ((global_last_activity_outgoung_ft_ts > -1) && ((global_last_activity_outgoung_ft_ts + 200) > System.currentTimeMillis())) {
+
+                        // HINT: are we still in the first 60 seconds of the main loop?
+                        val tox_boost_active = (System.currentTimeMillis() - tox_loop_start_ms) < tox_boost_duration_ms
+
+                        if (tox_boost_active) {
+                            // HINT: startup boost, iterate every 5 ms
+                            current_trifa_sleep_ms = tox_boost_sleep_ms.toInt()
+                            sleep(tox_boost_sleep_ms)
+                        } else if ((global_last_activity_outgoung_ft_ts > -1) && ((global_last_activity_outgoung_ft_ts + 200) > System.currentTimeMillis())) {
                             // HINT: iterate much faster if there are active filetransfers
                             current_trifa_sleep_ms = 0
                             sleep(0, 50)
