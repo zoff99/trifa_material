@@ -105,6 +105,12 @@ import java.util.*
 
 class TrifaToxService
 {
+    /**
+     * Start the tox service thread.
+     *
+     * The thread does three things, in this order: start up, run the main loop, shut down.
+     * Each step is a separate function below, so this stays easy to read.
+     */
     fun tox_thread_start_fg()
     {
         Log.i(TAG, "tox_thread_start_fg")
@@ -112,459 +118,574 @@ class TrifaToxService
         {
             override fun run()
             {
-                try
-                {
-                    Thread.currentThread().name = "t_tox_iter"
-                } catch (_: Exception)
-                {
-                }
+                name_tox_thread()
 
-                set_schema_upgrade_callback { old_version, new_version ->
-                    Log.i(TAG, "REAL:trying to upgrade schema from " + old_version + " to " + new_version)
-                    upgrade_db_schema_do(old_version, new_version)
-                }
-
-                orma = OrmaDatabase(PREF__database_files_dir + "/main.db", db_password, PREF__DB_wal_mode);
-                OrmaDatabase.init(ORMA_CURRENT_DB_SCHEMA_VERSION)
                 // ------ correct startup order ------
-                globalstore.setOrmaRunning(true)
-                var debug__cipher_version: String? = "unknown"
-                try
-                {
-                    debug__cipher_version = OrmaDatabase.run_query_for_single_result("PRAGMA cipher_version")
-                } catch (e: java.lang.Exception)
-                {
-                    e.printStackTrace()
-                }
-                Log.i(TAG, "debug__cipher_version:" + debug__cipher_version)
-                if (debug__cipher_version.isNullOrEmpty())
-                {
-                    globalstore.setNative_sqlite_type(SQLITE_TYPE.SQLITE)
-                }
-                else
-                {
-                    globalstore.setNative_sqlite_type(SQLITE_TYPE.SQLCIPHER)
-                }
-                load_db_prefs()
-                try {
-                    globalstore.try_clear_unread_message_count()
-                } catch(_: Exception) {
-                }
+                open_database()
+                val tox_was_already_started = init_tox_if_needed()
+                set_self_name_on_first_run()
+                reload_friends_and_groups()
+                start_audio_play_threads()
+                bootstrap_if_needed(tox_was_already_started)
+                // ------ correct startup order ------
 
-                try {
-                    globalstore.try_clear_unread_group_message_count()
-                } catch(_: Exception) {
-                }
+                run_main_tox_loop()
 
-                val old_is_tox_started = is_tox_started
-                Log.i(TAG, "is_tox_started:==============================")
-                Log.i(TAG, "is_tox_started=" + is_tox_started)
-                Log.i(TAG, "is_tox_started:==============================")
-                is_tox_started = true
-                if (!old_is_tox_started)
-                {
-                    init_tox_callbacks()
-                    update_savedata_file_wrapper()
-                } // ------ correct startup order ------
+                shutdown_tox_and_database()
+            }
+        }
+        (ToxServiceThread as Thread).start()
+    }
 
-                try
-                {
-                    Log.i(TAG, "StartupSelfname: " + globalstore.getStartupSelfname())
-                    Log.i(TAG, "FirstRun: " + globalstore.isFirstRun())
-                    if (globalstore.isFirstRun())
-                    {
-                        globalstore.updateFirstRun(false)
-                        tox_self_set_name(globalstore.getStartupSelfname())
-                        update_savedata_file_wrapper()
-                    }
-                }
-                catch(_: Exception)
-                {
-                }
-                clear_friends()
-                load_friends()
-                clear_groups()
-                load_groups()
-                // --------------- bootstrap ---------------
-                // --------------- bootstrap ---------------
-                // --------------- bootstrap ---------------
+    /**
+     * The main tox loop. Runs until stop_me is set, and does a little bit of work
+     * on every turn: wait, iterate toxcore, then the periodic background jobs.
+     */
+    private fun run_main_tox_loop()
+    {
+        var tox_iteration_interval_ms = tox_iteration_interval()
+        Log.i(TAG, "tox_iteration_interval_ms=$tox_iteration_interval_ms")
+        tox_iterate()
+        global_self_connection_status = tox_self_get_connection_status()
 
-                ngc_audio_play_thread_running = true
-                ngc_audio_play_thread_start()
+        val health = read_initial_tox_health()
+        tox_reset_estimated_cpu_cycles()
 
-                tox_audio_play_thread_running = true
-                tox_audio_play_thread_start()
+        set_tox_running_state("running")
+        globalstore.setToxRunning(true)
 
-                if (!old_is_tox_started)
-                {
-                    TRIFAGlobals.bootstrapping = true
-                    Log.i(TAG, "bootrapping:set to true")
-                    bootstrap_me()
-                }
-                // --------------- bootstrap ---------------
-                // --------------- bootstrap ---------------
-                // --------------- bootstrap ---------------
-                var tox_iteration_interval_ms = tox_iteration_interval()
-                Log.i(TAG, "tox_iteration_interval_ms=$tox_iteration_interval_ms")
-                tox_iterate()
-                global_self_connection_status = tox_self_get_connection_status()
+        // HINT: "startup boost" for the first 60 seconds of the main tox loop.
+        // While the boost is active we iterate every 5 ms instead of the normal
+        // interval, so connecting and syncing happen faster right after start.
+        val tox_loop_start_ms = System.currentTimeMillis()
 
-                val current_health_init: Int = tox_self_get_network_health()
-                val health_text_init: String = ToxVars.TOX_NETWORK_HEALTH.value_str(current_health_init).replace("TOX_NETWORK_HEALTH_", "")
-                Log.i(TAG, "tox_network_health: " + health_text_init)
+        while (!stop_me)
+        {
+            // HINT: are we still in the first 60 seconds of the main loop?
+            val tox_boost_active = (System.currentTimeMillis() - tox_loop_start_ms) < TOX_BOOST_DURATION_MS
 
-                val currenc_gc_health_init: Int = tox_group_get_health()
-                val gc_health_text_init: String = ToxVars.TOX_GROUP_HEALTH.value_str(currenc_gc_health_init).replace("TOX_GROUP_HEALTH_", "")
-                Log.i(TAG, "tox_gc_health: " + gc_health_text_init)
+            sleep_before_next_iterate(tox_iteration_interval_ms, tox_boost_active)
+            check_if_need_bootstrap_again()
+            tox_iterate()
+
+            while (HALT_TOX_THREAD)
+            {
+                Thread.sleep(100)
+            }
+
+            tox_iteration_interval_ms = tox_iteration_interval()
+
+            health.check_if_due()
+            resend_pending_messages()
+            start_queued_outgoing_filetransfers()
+            refresh_friend_ip_info()
+        }
+    }
+
+    /**
+     * Remembers the last health values we saw, so we only log and update the UI
+     * when a value actually changes. Health is checked at most every 3 seconds.
+     */
+    private class ToxHealthCheck(initial_network_health: Int, initial_group_health: Int)
+    {
+        var last_check_ms: Long = 0
+        var last_network_health: Int = initial_network_health
+        var last_group_health: Int = initial_group_health
+
+        fun check_if_due()
+        {
+            val current_time_ms = System.currentTimeMillis()
+            if ((current_time_ms - last_check_ms) >= 3000)
+            {
+                last_check_ms = current_time_ms
 
                 try
                 {
-                    set_tox_network_health(current_health_init)
-                } catch (e: java.lang.Exception)
-                {
-                }
-                var last_health_check_ms: Long = 0
-                var last_network_health = current_health_init
-
-                var last_gc_health = currenc_gc_health_init
-                tox_reset_estimated_cpu_cycles()
-
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                set_tox_running_state("running")
-                globalstore.setToxRunning(true)
-
-                // HINT: "startup boost" for the first 60 seconds of the main tox loop.
-                // While the boost is active we iterate every 5 ms instead of the normal
-                // interval, so connecting and syncing happen faster right after start.
-                val tox_loop_start_ms = System.currentTimeMillis()
-                val tox_boost_duration_ms = 60 * 1000L  // boost lasts 60 seconds
-                val tox_boost_sleep_ms = 5L             // iterate every 5 ms while boosting
-
-                while (!stop_me)
-                {
-                    try
+                    val current_health = tox_self_get_network_health()
+                    if (current_health != last_network_health)
                     {
-                        current_tox_sleep_ms = tox_iteration_interval_ms.toInt()
+                        val health_text = ToxVars.TOX_NETWORK_HEALTH.value_str(current_health).replace("TOX_NETWORK_HEALTH_", "")
+                        last_network_health = current_health
 
-                        // HINT: are we still in the first 60 seconds of the main loop?
-                        val tox_boost_active = (System.currentTimeMillis() - tox_loop_start_ms) < tox_boost_duration_ms
-
-                        if (tox_boost_active) {
-                            // HINT: startup boost, iterate every 5 ms
-                            current_trifa_sleep_ms = tox_boost_sleep_ms.toInt()
-                            sleep(tox_boost_sleep_ms)
-                        } else if ((global_last_activity_outgoung_ft_ts > -1) && ((global_last_activity_outgoung_ft_ts + 200) > System.currentTimeMillis())) {
-                            // HINT: iterate much faster if there are active filetransfers
-                            current_trifa_sleep_ms = 0
-                            sleep(0, 50)
-                            // Log.i(TAG, "=====>>>>> tox_iteration_interval: "+ "2")
-                        } else {
-                            if (avstatestore.state.calling_state_get() != AVState.CALL_STATUS.CALL_STATUS_NONE)
-                            {
-                                // HINT: iterate faster if there are active toxav calls
-                                current_trifa_sleep_ms = 4
-                                sleep(4, 0)
-                                // Log.i(TAG, "=====>>>>> tox_iteration_interval: "+ "4")
-                            }
-                            else
-                            {
-                                if (tox_iteration_interval_ms < TOX_ITERATE_MS_MIN_NORMAL)
-                                {
-                                    // HINT: never iterate faster than TOX_ITERATE_MS_MIN_NORMAL
-                                    current_trifa_sleep_ms = TOX_ITERATE_MS_MIN_NORMAL
-                                    sleep(TOX_ITERATE_MS_MIN_NORMAL.toLong())
-                                    // Log.i(TAG, "=====>>>>> tox_iteration_interval: " + tox_iteration_interval_ms)
-                                }
-                                else
-                                {
-                                    current_trifa_sleep_ms = tox_iteration_interval_ms.toInt()
-                                    sleep(tox_iteration_interval_ms)
-                                    //if (tox_iteration_interval_ms != 50L)
-                                    //{
-                                    //    Log.i(TAG, "=====>>>>> tox_iteration_interval: " + tox_iteration_interval_ms)
-                                    //}
-                                }
-                            }
-                        }
-                    } catch (e: InterruptedException)
-                    {
-                        e.printStackTrace()
-                    } catch (e: Exception)
-                    {
-                        e.printStackTrace()
-                    }
-                    check_if_need_bootstrap_again()
-                    tox_iterate()
-
-                    while (HALT_TOX_THREAD)
-                    {
-                        sleep(100)
-                    }
-
-                    // Log.i(TAG, "=====>>>>> tox_iterate()")
-                    tox_iteration_interval_ms = tox_iteration_interval()
-                    // Log.i(TAG, "=====>>>>> tox_iteration_interval: "+ tox_iteration_interval_ms)
-
-                    // [ADDED] Check network health every 3 seconds
-                    val current_time_ms = System.currentTimeMillis()
-                    if ((current_time_ms - last_health_check_ms) >= 3000)
-                    {
-                        last_health_check_ms = current_time_ms
+                        Log.i(TAG, "tox_network_health: " + health_text)
 
                         try
                         {
-                            val current_health = tox_self_get_network_health()
-                            if (current_health != last_network_health)
-                            {
-                                val health_text = ToxVars.TOX_NETWORK_HEALTH.value_str(current_health).replace("TOX_NETWORK_HEALTH_", "")
-                                last_network_health = current_health
-
-                                Log.i(TAG, "tox_network_health: " + health_text)
-
-                                try
-                                {
-                                    set_tox_network_health(last_network_health)
-                                } catch (e: java.lang.Exception)
-                                {
-                                }
-                            }
-
-                            val current_gc_health: Int = tox_group_get_health()
-                            if (current_gc_health != last_gc_health)
-                            {
-                                val gc_health_text = ToxVars.TOX_GROUP_HEALTH.value_str(current_gc_health).replace("TOX_GROUP_HEALTH_", "")
-                                last_gc_health = current_gc_health
-
-                                Log.i(TAG, "gc_health_text: " + gc_health_text)
-
-                                try
-                                {
-                                    set_tox_group_health(last_gc_health)
-                                } catch (e: java.lang.Exception)
-                                {
-                                }
-                            }
-
+                            set_tox_network_health(last_network_health)
                         } catch (e: java.lang.Exception)
                         {
                         }
                     }
 
-                    // --- send pending 1-on-1 text messages here --------------
-                    if (online_button_text_wrapper != "offline")
+                    val current_gc_health: Int = tox_group_get_health()
+                    if (current_gc_health != last_group_health)
                     {
-                        if ((last_resend_pending_messages4_ms + (10 * 1000)) < System.currentTimeMillis())
-                        {
-                            last_resend_pending_messages4_ms = System.currentTimeMillis()
-                            if (DB_PREF__send_push_notifications == true)
-                            {
-                                resend_push_for_v3_messages()
-                            }
-                        }
+                        val gc_health_text = ToxVars.TOX_GROUP_HEALTH.value_str(current_gc_health).replace("TOX_GROUP_HEALTH_", "")
+                        last_group_health = current_gc_health
 
-                        if ((last_resend_pending_messages0_ms + (30 * 1000)) < System.currentTimeMillis())
-                        {
-                            last_resend_pending_messages0_ms = System.currentTimeMillis();
-                            resend_old_messages(null)
-                        }
+                        Log.i(TAG, "gc_health_text: " + gc_health_text)
 
-                        if ((last_resend_pending_messages1_ms + (30 * 1000)) < System.currentTimeMillis())
-                        {
-                            last_resend_pending_messages1_ms = System.currentTimeMillis();
-                            resend_v3_messages(null)
-                        }
-
-                        if ((last_resend_pending_messages2_ms + (30 * 1000)) < System.currentTimeMillis())
-                        {
-                            last_resend_pending_messages2_ms = System.currentTimeMillis();
-                            resend_v2_messages(false)
-                        }
-
-                        if ((last_resend_pending_messages3_ms + (120 * 1000)) < System.currentTimeMillis())
-                        {
-                            last_resend_pending_messages3_ms = System.currentTimeMillis();
-                            resend_v2_messages(true)
-                        }
-                    }
-                    // --- send pending 1-on-1 text messages here --------------
-
-                    // --- start queued outgoing FTs here --------------
-                    if (online_button_text_wrapper != "offline")
-                    {
-                        if (last_start_queued_fts_ms + 4 * 1000 < System.currentTimeMillis())
-                        {
-                            // Log.i(TAG, "start_queued_outgoing_FTs ============================================");
-                            last_start_queued_fts_ms = System.currentTimeMillis()
-                            try
-                            {
-                                val m_v1 = orma!!.selectFromMessage().directionEq(TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_SENT.value).
-                                TRIFA_MESSAGE_TYPEEq(TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value).ft_outgoing_queuedEq(true).
-                                stateNotEq(ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL.value).orderBySent_timestampAsc().toList()
-                                if (m_v1 != null && m_v1.size > 0)
-                                {
-                                    val ii: Iterator<Message> = m_v1.iterator()
-                                    while (ii.hasNext())
-                                    {
-                                        val m_resend_ft = ii.next()
-                                        if (m_resend_ft.sent_push < 1) {
-                                            friend_call_push_url(m_resend_ft.tox_friendpubkey, m_resend_ft.sent_timestamp)
-                                        }
-                                        if (tox_friend_get_connection_status(
-                                                tox_friend_by_public_key(m_resend_ft.tox_friendpubkey))
-                                            != ToxVars.TOX_CONNECTION.TOX_CONNECTION_NONE.value)
-                                        {
-                                            start_outgoing_ft(m_resend_ft)
-                                        }
-                                    }
-                                }
-                            } catch (e: java.lang.Exception)
-                            {
-                            }
-                        }
-                    }
-                    // --- start queued outgoing FTs here --------------
-
-                    // --- refresh IP info for friends -----------------
-                    if (last_refresh_friends_ip_info_ms + 60 * 1000 < System.currentTimeMillis())
-                    {
-                        last_refresh_friends_ip_info_ms = System.currentTimeMillis()
                         try
                         {
-                            tox_self_get_friend_list()?.forEach {
-                                // Log.i(TAG, "update ip status for friend:" + it)
-                                try
-                                {
-                                    val ip_addr_str = get_friend_ip_str(it)
-                                    val f_pubkey = tox_friend_get_public_key(it)
-                                    contactstore.update_ipaddr(pubkey = f_pubkey!!, ipaddr = ip_addr_str)
-                                }
-                                catch(_: Exception)
-                                {
-                                    val f_pubkey = tox_friend_get_public_key(it)
-                                    contactstore.update_ipaddr(pubkey = f_pubkey!!, ipaddr = "")
-                                }
-                            }
-                        }
-                        catch(_: java.lang.Exception)
+                            set_tox_group_health(last_group_health)
+                        } catch (e: java.lang.Exception)
                         {
                         }
                     }
-                    // --- refresh IP info for friends -----------------
-                }
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                // ------- MAIN TOX LOOP ---------------------------------------------------------------
-                ngc_audio_play_thread_running = false
-                try
-                {
-                    set_tox_network_health(ToxVars.TOX_NETWORK_HEALTH.TOX_NETWORK_HEALTH_UNKNOWN.value)
+
                 } catch (e: java.lang.Exception)
-                {
-                }
-
-                try
-                {
-                    set_tox_group_health(ToxVars.TOX_GROUP_HEALTH.TOX_GROUP_HEALTH_UNKNOWN.value)
-                } catch (e: java.lang.Exception)
-                {
-                }
-
-                try
-                {
-                    ngc_audio_play_thread!!.join(500)
-                }
-                catch(e: Exception)
-                {
-                    e.printStackTrace()
-                }
-
-                tox_audio_play_thread_running = false
-                try
-                {
-                    tox_audio_play_thread!!.join(500)
-                }
-                catch(e: Exception)
-                {
-                    e.printStackTrace()
-                }
-
-                try
-                {
-                    sleep(100) // wait a bit, for "something" to finish up in the native code
-                } catch (e: Exception)
-                {
-                    e.printStackTrace()
-                }
-
-                update_savedata_file_wrapper()
-                is_tox_started = false
-
-                tox_reset_estimated_cpu_cycles()
-
-                clear_friends()
-                clear_groups()
-                try {
-                    globalstore.hard_clear_unread_message_count()
-                } catch(_: Exception) {
-                }
-                try {
-                    globalstore.hard_clear_unread_group_message_count()
-                } catch(_: Exception) {
-                }
-
-                try
-                {
-                    tox_kill()
-                } catch (e: Exception)
-                {
-                    e.printStackTrace()
-                }
-                try
-                {
-                    sleep(100) // wait a bit, for "something" to finish up in the native code
-                } catch (e: Exception)
-                {
-                    e.printStackTrace()
-                }
-
-                set_tox_running_state("stopped")
-                globalstore.setToxRunning(false)
-
-                clear_friends()
-                clear_groups()
-                try {
-                    globalstore.hard_clear_unread_message_count()
-                } catch(_: Exception) {
-                }
-                try {
-                    globalstore.hard_clear_unread_group_message_count()
-                } catch(_: Exception) {
-                }
-
-                globalstore.setOrmaRunning(false)
-                globalstore.setNative_sqlite_type(SQLITE_TYPE.UNLOADED)
-                // ----------------- DB shutdown -----------------
-                orma = null
-                OrmaDatabase.shutdown()
-                // ----------------- DB shutdown -----------------
-                Log.i(TAG, "DB:shutdown ok")
-                unlock_data_dir_input()
-                try
-                {
-                    toxdatastore.updateToxID("")
-                } catch (_: Exception)
                 {
                 }
             }
         }
-        (ToxServiceThread as Thread).start()
     }
+
+    /**
+     * Give the thread a readable name, so it is easy to spot in a debugger or thread dump.
+     */
+    private fun name_tox_thread()
+    {
+        try
+        {
+            Thread.currentThread().name = "t_tox_iter"
+        } catch (_: Exception)
+        {
+        }
+    }
+
+    /**
+     * Open the encrypted database, detect whether it is SQLCipher or plain SQLite,
+     * then load the preferences and reset the unread counters.
+     */
+    private fun open_database()
+    {
+        set_schema_upgrade_callback { old_version, new_version ->
+            Log.i(TAG, "REAL:trying to upgrade schema from " + old_version + " to " + new_version)
+            upgrade_db_schema_do(old_version, new_version)
+        }
+
+        orma = OrmaDatabase(PREF__database_files_dir + "/main.db", db_password, PREF__DB_wal_mode);
+        OrmaDatabase.init(ORMA_CURRENT_DB_SCHEMA_VERSION)
+        // ------ correct startup order ------
+        globalstore.setOrmaRunning(true)
+        var debug__cipher_version: String? = "unknown"
+        try
+        {
+            debug__cipher_version = OrmaDatabase.run_query_for_single_result("PRAGMA cipher_version")
+        } catch (e: java.lang.Exception)
+        {
+            e.printStackTrace()
+        }
+        Log.i(TAG, "debug__cipher_version:" + debug__cipher_version)
+        if (debug__cipher_version.isNullOrEmpty())
+        {
+            globalstore.setNative_sqlite_type(SQLITE_TYPE.SQLITE)
+        }
+        else
+        {
+            globalstore.setNative_sqlite_type(SQLITE_TYPE.SQLCIPHER)
+        }
+        load_db_prefs()
+        try {
+            globalstore.try_clear_unread_message_count()
+        } catch(_: Exception) {
+        }
+
+        try {
+            globalstore.try_clear_unread_group_message_count()
+        } catch(_: Exception) {
+        }
+    }
+
+    /**
+     * Mark tox as started. If this is the very first start, also install the tox callbacks.
+     *
+     * @return true if tox was ALREADY started before this call (so we must not bootstrap again).
+     */
+    private fun init_tox_if_needed(): Boolean
+    {
+        val old_is_tox_started = is_tox_started
+        Log.i(TAG, "is_tox_started:==============================")
+        Log.i(TAG, "is_tox_started=" + is_tox_started)
+        Log.i(TAG, "is_tox_started:==============================")
+        is_tox_started = true
+        if (!old_is_tox_started)
+        {
+            init_tox_callbacks()
+            update_savedata_file_wrapper()
+        } // ------ correct startup order ------
+        return old_is_tox_started
+    }
+
+    /**
+     * On the very first run ever, set our own tox name to the generated startup name.
+     */
+    private fun set_self_name_on_first_run()
+    {
+        try
+        {
+            Log.i(TAG, "StartupSelfname: " + globalstore.getStartupSelfname())
+            Log.i(TAG, "FirstRun: " + globalstore.isFirstRun())
+            if (globalstore.isFirstRun())
+            {
+                globalstore.updateFirstRun(false)
+                tox_self_set_name(globalstore.getStartupSelfname())
+                update_savedata_file_wrapper()
+            }
+        }
+        catch(_: Exception)
+        {
+        }
+    }
+
+    /**
+     * Load the friend list and the group list from the database into the UI stores.
+     */
+    private fun reload_friends_and_groups()
+    {
+        clear_friends()
+        load_friends()
+        clear_groups()
+        load_groups()
+    }
+
+    /**
+     * Start the two audio playback threads: one for group calls, one for 1-on-1 calls.
+     */
+    private fun start_audio_play_threads()
+    {
+        ngc_audio_play_thread_running = true
+        ngc_audio_play_thread_start()
+
+        tox_audio_play_thread_running = true
+        tox_audio_play_thread_start()
+    }
+
+    /**
+     * Connect to the tox network. Only needed when tox was not running before.
+     */
+    private fun bootstrap_if_needed(tox_was_already_started: Boolean)
+    {
+        if (!tox_was_already_started)
+        {
+            TRIFAGlobals.bootstrapping = true
+            Log.i(TAG, "bootrapping:set to true")
+            bootstrap_me()
+        }
+    }
+
+    /**
+     * Read the network health and the group health once at startup, log them,
+     * and remember them so the main loop can notice later changes.
+     */
+    private fun read_initial_tox_health(): ToxHealthCheck
+    {
+        val current_health_init: Int = tox_self_get_network_health()
+        val health_text_init: String = ToxVars.TOX_NETWORK_HEALTH.value_str(current_health_init).replace("TOX_NETWORK_HEALTH_", "")
+        Log.i(TAG, "tox_network_health: " + health_text_init)
+
+        val currenc_gc_health_init: Int = tox_group_get_health()
+        val gc_health_text_init: String = ToxVars.TOX_GROUP_HEALTH.value_str(currenc_gc_health_init).replace("TOX_GROUP_HEALTH_", "")
+        Log.i(TAG, "tox_gc_health: " + gc_health_text_init)
+
+        try
+        {
+            set_tox_network_health(current_health_init)
+        } catch (e: java.lang.Exception)
+        {
+        }
+
+        return ToxHealthCheck(current_health_init, currenc_gc_health_init)
+    }
+
+    /**
+     * Wait before the next tox_iterate() call.
+     *
+     * The shortest requested wait wins:
+     *  1. startup boost (first 60 seconds), 2. active filetransfer, 3. active call,
+     *  4. otherwise the interval toxcore asks for, but never less than TOX_ITERATE_MS_MIN_NORMAL.
+     */
+    private fun sleep_before_next_iterate(tox_iteration_interval_ms: Long, tox_boost_active: Boolean)
+    {
+        try
+        {
+            current_tox_sleep_ms = tox_iteration_interval_ms.toInt()
+
+            if (tox_boost_active) {
+                // HINT: startup boost, iterate every 5 ms
+                current_trifa_sleep_ms = TOX_BOOST_SLEEP_MS.toInt()
+                Thread.sleep(TOX_BOOST_SLEEP_MS)
+            } else if ((global_last_activity_outgoung_ft_ts > -1) && ((global_last_activity_outgoung_ft_ts + 200) > System.currentTimeMillis())) {
+                // HINT: iterate much faster if there are active filetransfers
+                current_trifa_sleep_ms = 0
+                Thread.sleep(0, 50)
+                // Log.i(TAG, "=====>>>>> tox_iteration_interval: "+ "2")
+            } else {
+                if (avstatestore.state.calling_state_get() != AVState.CALL_STATUS.CALL_STATUS_NONE)
+                {
+                    // HINT: iterate faster if there are active toxav calls
+                    current_trifa_sleep_ms = 4
+                    Thread.sleep(4, 0)
+                    // Log.i(TAG, "=====>>>>> tox_iteration_interval: "+ "4")
+                }
+                else
+                {
+                    if (tox_iteration_interval_ms < TOX_ITERATE_MS_MIN_NORMAL)
+                    {
+                        // HINT: never iterate faster than TOX_ITERATE_MS_MIN_NORMAL
+                        current_trifa_sleep_ms = TOX_ITERATE_MS_MIN_NORMAL
+                        Thread.sleep(TOX_ITERATE_MS_MIN_NORMAL.toLong())
+                        // Log.i(TAG, "=====>>>>> tox_iteration_interval: " + tox_iteration_interval_ms)
+                    }
+                    else
+                    {
+                        current_trifa_sleep_ms = tox_iteration_interval_ms.toInt()
+                        Thread.sleep(tox_iteration_interval_ms)
+                        //if (tox_iteration_interval_ms != 50L)
+                        //{
+                        //    Log.i(TAG, "=====>>>>> tox_iteration_interval: " + tox_iteration_interval_ms)
+                        //}
+                    }
+                }
+            }
+        } catch (e: InterruptedException)
+        {
+            e.printStackTrace()
+        } catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * Retry sending 1-on-1 text messages that have not been confirmed yet.
+     * Each kind of message has its own retry interval. Does nothing while we are offline.
+     */
+    private fun resend_pending_messages()
+    {
+        // --- send pending 1-on-1 text messages here --------------
+        if (online_button_text_wrapper != "offline")
+        {
+            if ((last_resend_pending_messages4_ms + (10 * 1000)) < System.currentTimeMillis())
+            {
+                last_resend_pending_messages4_ms = System.currentTimeMillis()
+                if (DB_PREF__send_push_notifications == true)
+                {
+                    resend_push_for_v3_messages()
+                }
+            }
+
+            if ((last_resend_pending_messages0_ms + (30 * 1000)) < System.currentTimeMillis())
+            {
+                last_resend_pending_messages0_ms = System.currentTimeMillis();
+                resend_old_messages(null)
+            }
+
+            if ((last_resend_pending_messages1_ms + (30 * 1000)) < System.currentTimeMillis())
+            {
+                last_resend_pending_messages1_ms = System.currentTimeMillis();
+                resend_v3_messages(null)
+            }
+
+            if ((last_resend_pending_messages2_ms + (30 * 1000)) < System.currentTimeMillis())
+            {
+                last_resend_pending_messages2_ms = System.currentTimeMillis();
+                resend_v2_messages(false)
+            }
+
+            if ((last_resend_pending_messages3_ms + (120 * 1000)) < System.currentTimeMillis())
+            {
+                last_resend_pending_messages3_ms = System.currentTimeMillis();
+                resend_v2_messages(true)
+            }
+        }
+        // --- send pending 1-on-1 text messages here --------------
+    }
+
+    /**
+     * Start outgoing filetransfers that are waiting in the queue, as soon as the peer is online.
+     */
+    private fun start_queued_outgoing_filetransfers()
+    {
+        // --- start queued outgoing FTs here --------------
+        if (online_button_text_wrapper != "offline")
+        {
+            if (last_start_queued_fts_ms + 4 * 1000 < System.currentTimeMillis())
+            {
+                // Log.i(TAG, "start_queued_outgoing_FTs ============================================");
+                last_start_queued_fts_ms = System.currentTimeMillis()
+                try
+                {
+                    val m_v1 = orma!!.selectFromMessage().directionEq(TRIFAGlobals.TRIFA_MSG_DIRECTION.TRIFA_MSG_DIRECTION_SENT.value).
+                    TRIFA_MESSAGE_TYPEEq(TRIFAGlobals.TRIFA_MSG_TYPE.TRIFA_MSG_FILE.value).ft_outgoing_queuedEq(true).
+                    stateNotEq(ToxVars.TOX_FILE_CONTROL.TOX_FILE_CONTROL_CANCEL.value).orderBySent_timestampAsc().toList()
+                    if (m_v1 != null && m_v1.size > 0)
+                    {
+                        val ii: Iterator<Message> = m_v1.iterator()
+                        while (ii.hasNext())
+                        {
+                            val m_resend_ft = ii.next()
+                            if (m_resend_ft.sent_push < 1) {
+                                friend_call_push_url(m_resend_ft.tox_friendpubkey, m_resend_ft.sent_timestamp)
+                            }
+                            if (tox_friend_get_connection_status(
+                                    tox_friend_by_public_key(m_resend_ft.tox_friendpubkey))
+                                != ToxVars.TOX_CONNECTION.TOX_CONNECTION_NONE.value)
+                            {
+                                start_outgoing_ft(m_resend_ft)
+                            }
+                        }
+                    }
+                } catch (e: java.lang.Exception)
+                {
+                }
+            }
+        }
+        // --- start queued outgoing FTs here --------------
+    }
+
+    /**
+     * Once a minute, store the current IP address of every friend (shown in the UI).
+     */
+    private fun refresh_friend_ip_info()
+    {
+        // --- refresh IP info for friends -----------------
+        if (last_refresh_friends_ip_info_ms + 60 * 1000 < System.currentTimeMillis())
+        {
+            last_refresh_friends_ip_info_ms = System.currentTimeMillis()
+            try
+            {
+                tox_self_get_friend_list()?.forEach {
+                    // Log.i(TAG, "update ip status for friend:" + it)
+                    try
+                    {
+                        val ip_addr_str = get_friend_ip_str(it)
+                        val f_pubkey = tox_friend_get_public_key(it)
+                        contactstore.update_ipaddr(pubkey = f_pubkey!!, ipaddr = ip_addr_str)
+                    }
+                    catch(_: Exception)
+                    {
+                        val f_pubkey = tox_friend_get_public_key(it)
+                        contactstore.update_ipaddr(pubkey = f_pubkey!!, ipaddr = "")
+                    }
+                }
+            }
+            catch(_: java.lang.Exception)
+            {
+            }
+        }
+        // --- refresh IP info for friends -----------------
+    }
+
+    /**
+     * Stop everything in the reverse order of startup: audio threads, tox, then the database.
+     * Called after the main loop ends, i.e. when stop_me was set.
+     */
+    private fun shutdown_tox_and_database()
+    {
+        ngc_audio_play_thread_running = false
+        try
+        {
+            set_tox_network_health(ToxVars.TOX_NETWORK_HEALTH.TOX_NETWORK_HEALTH_UNKNOWN.value)
+        } catch (e: java.lang.Exception)
+        {
+        }
+
+        try
+        {
+            set_tox_group_health(ToxVars.TOX_GROUP_HEALTH.TOX_GROUP_HEALTH_UNKNOWN.value)
+        } catch (e: java.lang.Exception)
+        {
+        }
+
+        try
+        {
+            ngc_audio_play_thread!!.join(500)
+        }
+        catch(e: Exception)
+        {
+            e.printStackTrace()
+        }
+
+        tox_audio_play_thread_running = false
+        try
+        {
+            tox_audio_play_thread!!.join(500)
+        }
+        catch(e: Exception)
+        {
+            e.printStackTrace()
+        }
+
+        try
+        {
+            Thread.sleep(100) // wait a bit, for "something" to finish up in the native code
+        } catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+
+        update_savedata_file_wrapper()
+        is_tox_started = false
+
+        tox_reset_estimated_cpu_cycles()
+
+        clear_friends()
+        clear_groups()
+        try {
+            globalstore.hard_clear_unread_message_count()
+        } catch(_: Exception) {
+        }
+        try {
+            globalstore.hard_clear_unread_group_message_count()
+        } catch(_: Exception) {
+        }
+
+        try
+        {
+            tox_kill()
+        } catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+        try
+        {
+            Thread.sleep(100) // wait a bit, for "something" to finish up in the native code
+        } catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+
+        set_tox_running_state("stopped")
+        globalstore.setToxRunning(false)
+
+        clear_friends()
+        clear_groups()
+        try {
+            globalstore.hard_clear_unread_message_count()
+        } catch(_: Exception) {
+        }
+        try {
+            globalstore.hard_clear_unread_group_message_count()
+        } catch(_: Exception) {
+        }
+
+        globalstore.setOrmaRunning(false)
+        globalstore.setNative_sqlite_type(SQLITE_TYPE.UNLOADED)
+        // ----------------- DB shutdown -----------------
+        orma = null
+        OrmaDatabase.shutdown()
+        // ----------------- DB shutdown -----------------
+        Log.i(TAG, "DB:shutdown ok")
+        unlock_data_dir_input()
+        try
+        {
+            toxdatastore.updateToxID("")
+        } catch (_: Exception)
+        {
+        }
+    }
+
 
     fun wal_checkpoint()
     {
@@ -945,6 +1066,11 @@ class TrifaToxService
     companion object
     {
         const val TAG = "trifa.ToxService"
+
+        // HINT: "startup boost": for the first 60 seconds of the main tox loop we iterate
+        // every 5 ms instead of the normal interval, so connecting and syncing are faster.
+        const val TOX_BOOST_DURATION_MS = 60 * 1000L
+        const val TOX_BOOST_SLEEP_MS = 5L
         var ToxServiceThread: Thread? = null
         var stop_me = false
         var is_tox_started = false
